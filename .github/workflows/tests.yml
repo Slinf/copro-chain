@@ -32,7 +32,7 @@ jobs:
 
       - name: Run Coverage
         run: |
-          cd backend
+          cd "backend"
           npx hardhat coverage
 
       - name: Check Coverage Threshold

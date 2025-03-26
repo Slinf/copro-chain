@@ -21,10 +21,10 @@ jobs:
 
       - name: Install dependencies
         run: 
-          cd backend &&
+          cd "backend" &&
           npm install
 
       - name: Generate Documentation via Hardhat docgen
         run: 
-          cd backend 
+          cd "backend" &&
           npx hardhat docgen
