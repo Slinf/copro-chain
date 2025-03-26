@@ -1,5 +1,4 @@
 name: Generate Solidity Documentation
-working-directory: ./backend
 on:
   pull_request:
     branches:
