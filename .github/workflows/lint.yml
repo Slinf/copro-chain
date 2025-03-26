@@ -21,15 +21,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd backend
+          cd "backend" &&
           npm install
 
       - name: Install Solhint
         run: |
-          cd backend
+          cd "backend" &&
           npm install solhint@latest --save-dev
 
       - name: Run Solhint
         run: |
-          cd backend
-          npx solhint 'contracts/**/*.sol' --config ../../conf/solhint.json
+          cd "backend" &&
+          npx solhint 'contracts/**/*.sol' --config ../conf/solhint.json

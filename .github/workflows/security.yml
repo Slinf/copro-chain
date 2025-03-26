@@ -18,14 +18,14 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: '18'
 
       - name: Install Slither
         run: |
-          cd backend
+          cd "backend" &&
           pip install slither-analyzer
 
       - name: Run Slither Security Analysis
         run: |
-          cd backend
+          cd "backend" &&
           slither contracts/
