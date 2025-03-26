@@ -21,9 +21,9 @@ jobs:
           node-version: '14'
 
       - name: Install Slither
-        working-directory: ./backend
         run: |
           pip install slither-analyzer
+        working-directory: ./backend
 
       - name: Run Slither Security Analysis
         run: |
