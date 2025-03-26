@@ -11,14 +11,23 @@ async function main() {
     const [deployer] = await ethers.getSigners();
     console.log("Deploying contracts with the account:", deployer.address);
 
-     // Déployer le contrat
-  const token = await ethers.deployContract("CoproToken", [deployer.address], {});
+    // Déployer le token
+    const token = await ethers.deployContract("CoproToken", [deployer.address], {});
+    
+    await token.waitForDeployment();
 
-  await token.waitForDeployment();
+    console.log(
+        `Contract Token deployed to ${token.target}, adress owner is ${deployer.address}`
+    );
 
-  console.log(
-    `Contract Token deployed to ${token.target}, adress owner is ${deployer.address}`
-  );
+    // Déployer le contrat governor
+    const governor = await ethers.deployContract("CoproGovernor", [await token.getAddress()], {});
+
+    await governor.waitForDeployment();
+
+    console.log(
+        `Governor deployed to ${governor.target}, adress owner is ${deployer.address}`
+    );
 }
 
 // We recommend this pattern to be able to use async/await everywhere
