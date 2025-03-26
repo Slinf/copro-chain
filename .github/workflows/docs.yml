@@ -20,8 +20,11 @@ jobs:
           node-version: "16"
 
       - name: Install dependencies
-        run: npm install
-        working-directory: ./backend
+        run: 
+          cd backend 
+          npm install
 
       - name: Generate Documentation via Hardhat docgen
-        run: npx hardhat docgen
+        run: 
+          cd backend 
+          npx hardhat docgen

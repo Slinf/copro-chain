@@ -22,8 +22,10 @@ jobs:
 
       - name: Install Slither
         run: |
+          cd backend
           pip install slither-analyzer
 
       - name: Run Slither Security Analysis
         run: |
+          cd backend
           slither contracts/

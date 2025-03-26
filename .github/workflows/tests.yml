@@ -22,14 +22,17 @@ jobs:
 
       - name: Install dependencies
         run: |
+          cd backend
           npm install
 
       - name: Run tests
         run: |
+          cd backend
           npx hardhat test --network hardhat
 
       - name: Run Coverage
         run: |
+          cd backend
           npx hardhat coverage
 
       - name: Check Coverage Threshold

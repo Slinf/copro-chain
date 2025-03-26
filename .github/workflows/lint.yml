@@ -17,16 +17,19 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: '18'
 
       - name: Install dependencies
         run: |
+          cd backend
           npm install
 
       - name: Install Solhint
         run: |
-          npm install --save-dev solhint
+          cd backend
+          npm install solhint@latest --save-dev
 
       - name: Run Solhint
         run: |
-          npx solhint 'contracts/**/*.sol' --max-line-length 120
+          cd backend
+          npx solhint 'contracts/**/*.sol' --config ../../conf/solhint.json
