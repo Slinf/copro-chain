@@ -23,7 +23,6 @@ jobs:
       - name: Install Slither
         run: |
           pip install slither-analyzer
-        working-directory: ./backend
 
       - name: Run Slither Security Analysis
         run: |

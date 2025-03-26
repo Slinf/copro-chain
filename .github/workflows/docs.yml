@@ -22,7 +22,6 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: ./backend
 
       - name: Generate Documentation via Hardhat docgen
         run: npx hardhat docgen
