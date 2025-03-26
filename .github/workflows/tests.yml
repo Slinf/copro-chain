@@ -1,4 +1,5 @@
-name: Run Hardhat Tests
+name: Run Hardhat Tests & Coverage
+
 
 on:
   pull_request:
@@ -18,7 +19,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: '16'
 
       - name: Install dependencies
         run: |
@@ -27,3 +28,22 @@ jobs:
       - name: Run tests
         run: |
           npx hardhat test --network hardhat
+
+      - name: Run Coverage
+        run: |
+          npx hardhat coverage
+
+      - name: Check Coverage Threshold
+        run: |
+          COVERAGE=$(grep -oP 'All files[^|]*\|\s*\K\d+(?=\s*%)' coverage/lcov-report/index.html | head -n 1)
+          echo "Coverage: $COVERAGE%"
+          if [ "$COVERAGE" -lt 80 ]; then
+            echo "Coverage is below 80%! Failing the workflow."
+            exit 1
+          fi
+ 
+      - name: Upload Coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          
