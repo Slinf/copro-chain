@@ -1,5 +1,5 @@
 name: Security Analysis with Slither
-
+working-directory: ./backend
 on:
   pull_request:
     branches:

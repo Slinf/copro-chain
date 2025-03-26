@@ -1,5 +1,5 @@
 name: Lint Solidity Code
-
+working-directory: ./backend
 on:
   pull_request:
     branches:

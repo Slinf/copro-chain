@@ -1,5 +1,5 @@
 name: Run Hardhat Tests & Coverage
-
+working-directory: ./backend
 
 on:
   pull_request:
