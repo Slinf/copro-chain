@@ -37,5 +37,4 @@ jobs:
 
       - name: Run Solhint
         run: |
-          cd "backend" &&
-          npx solhint -c solhint/solhint.json 'backend/contracts/**/*.sol' 
+          npx solhint -c backend/solhint/solhint.json 'backend/contracts/**/*.sol' 
