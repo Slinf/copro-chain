@@ -2,9 +2,6 @@
     "extends": "solhint:recommended",
     "rules": {
       "max-line-length": ["error", 120]
-    },
-    "compiler": {
-      "version": "^0.8.22"  
     }
   }
   
