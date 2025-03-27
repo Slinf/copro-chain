@@ -16,23 +16,34 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: '18'
 
       - name: Install dependencies
         run: |
-          cd backend
+          cd "backend" &&
           npm install
+      
+      - name: Install Git
+        run: |
+          apt-get update
+          apt-get install -y git
 
+      - name: Install curl (if missing)
+        run: |
+          cd "backend" &&
+          apt-get update
+          apt-get install -y curl
+    
       - name: Run tests
         run: |
-          cd backend
+          cd "backend" &&
           npx hardhat test --network hardhat
 
       - name: Run Coverage
         run: |
-          cd "backend"
+          cd "backend" &&
           npx hardhat coverage
 
       - name: Check Coverage Threshold
@@ -48,4 +59,6 @@ jobs:
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}  # Use the Coveralls token from GitHub Secrets
           

@@ -29,7 +29,12 @@ jobs:
           cd "backend" &&
           npm install solhint@latest --save-dev
 
+      - name: Check current directory
+        run: pwd
+
+      - name: List files
+        run: ls -la
+
       - name: Run Solhint
         run: |
-          cd "backend" &&
-          npx solhint 'contracts/**/*.sol' --config ../conf/solhint.json
+          npx solhint 'backend/contracts/**/*.sol'

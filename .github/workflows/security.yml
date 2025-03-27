@@ -20,6 +20,14 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+
+      - name: Install dependencies
+        run: |
+         cd "backend" && 
+         pip install
+
       - name: Install Slither
         run: |
           cd "backend" &&
