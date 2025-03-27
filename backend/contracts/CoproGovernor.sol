@@ -9,6 +9,11 @@ import {GovernorStorage} from "@openzeppelin/contracts/governance/extensions/Gov
 import {GovernorVotes} from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
 
+/**
+ * @dev Governor contract for copro-chain project
+ *
+ * This contract is based on OpenZeppelin librairy
+ */
 contract CoproGovernor is
     Governor,
     GovernorSettings,
