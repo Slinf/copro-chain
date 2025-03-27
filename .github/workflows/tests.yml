@@ -33,8 +33,8 @@ jobs:
       - name: Install curl (if missing)
         run: |
           cd "backend" &&
-          apt-get update
-          apt-get install -y curl
+          sudo apt-get update
+          sudo apt-get install -y curl
     
       - name: Run tests
         run: |
