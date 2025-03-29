@@ -20,11 +20,6 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies
-        run: |
-          cd "backend" && 
-          npm install @openzeppelin/contracts
-
       - name: Install Python and pip
         run: |
           sudo apt-get update
@@ -39,6 +34,7 @@ jobs:
       - name: Install Slither
         run: |
           cd "backend" &&
+          npm install @openzeppelin/contracts &&
           pip3 install slither-analyzer
 
       - name: Run Slither Security Analysis
