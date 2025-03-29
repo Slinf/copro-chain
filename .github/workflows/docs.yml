@@ -39,6 +39,10 @@ jobs:
         run: |
           git remote set-url origin https://x-access-token:${{ secrets.DOC_PAT }}@github.com/Slinf/copro-chain.git
 
+      - name: Test Git Authentication
+        run: |
+          curl -H "Authorization: token ${{ secrets.DOC_PAT }}" https://api.github.com/user
+
       - name: Debug Git Remote URL
         run: git remote -v
 
