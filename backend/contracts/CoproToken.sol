@@ -22,6 +22,18 @@ contract CoproToken is ERC20, Ownable, ERC20Permit, ERC20Votes {
      */
     address public syndic;
 
+    // Structure pour représenter un propriétaire avec son tantième
+    struct OwnerData {
+        address accountAddress;
+        uint256 tantiem;
+    }
+
+    /**
+     * @dev  Event throw when token are distributed successfuly
+     */
+    event TokensDistributed(address indexed owner, uint256 amount);
+    event TokensMinted(address indexed to, uint256 amount);
+
     constructor(
         address initialOwner
     )
@@ -33,18 +45,20 @@ contract CoproToken is ERC20, Ownable, ERC20Permit, ERC20Votes {
     }
 
     function distributeToken(
-        address[] memory owners,
-        uint256[] memory tantiemes
-    ) public onlyOwner {
+        OwnerData[] calldata owners
+    ) public onlyOwner returns (bool) {
         // Distribution des tokens selon les tantièmes
         // Pouvoir redistribuer les tokens après déploiement ?
         for (uint256 i = 0; i < owners.length; i++) {
-            _mint(owners[i], tantiemes[i]);
+            _mint(owners[i].accountAddress, owners[i].tantiem);
+            emit TokensDistributed(owners[i].accountAddress, owners[i].tantiem); // Émission d'un événement
         }
+        return true;
     }
 
     function mint(address to, uint256 amount) public onlyOwner {
         _mint(to, amount);
+        emit TokensMinted(to, amount);
     }
 
     function clock() public view override returns (uint48) {
