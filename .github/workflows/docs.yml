@@ -39,7 +39,7 @@ jobs:
     
       - name: Deploy Documentation to GitHub Pages
         run: |
-          cd "backend" &&
+          cd .\backend\ &&
           git checkout --orphan gh-pages
           git reset --hard
           git add docs
