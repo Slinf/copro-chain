@@ -33,12 +33,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y git
+
+      - name: List directory contents
+        run: ls -R
     
       - name: Deploy Documentation to GitHub Pages
         run: |
           cd backend
           git checkout --orphan gh-pages
           git reset --hard
-          git add ./backend/docs
+          git add docs
           git commit -m "Deploy documentation"
           git push --force https://x-access-token:${{ secrets.DOC_PAT }}@github.com/Slinf/copro-chain.git gh-pages
