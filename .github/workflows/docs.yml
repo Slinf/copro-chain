@@ -35,22 +35,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git
     
-      - name: Configure Git Remote with PAT
+      - name: Deploy Documentation to GitHub Pages
         run: |
-          git remote set-url origin https://x-access-token:${{ secrets.DOC_PAT }}@github.com/Slinf/copro-chain.git
-
-      - name: Test Git Authentication
-        run: |
-          curl -H "Authorization: token ${{ secrets.DOC_PAT }}" https://api.github.com/user
-
-      - name: Debug Git Remote URL
-        run: git remote -v
-
-      - name: Commit and push documentation
-        run: |
-          cd "backend" &&
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          cd backend
+          git checkout --orphan gh-pages
+          git reset --hard
           git add docs/
-          git commit -m "Update Solidity documentation" || echo "No changes to commit"
-          git push origin main
+          git commit -m "Deploy documentation"
+          git push --force https://x-access-token:${{ secrets.DOC_PAT }}@github.com/Slinf/copro-chain.git gh-pages
