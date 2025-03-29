@@ -29,7 +29,6 @@ jobs:
           cd "backend" &&
           npx hardhat docgen
 
-
       - name: Install Git
         run: |
           sudo apt-get update
@@ -37,7 +36,6 @@ jobs:
     
       - name: Deploy Documentation to GitHub Pages
         run: |
-          cd backend
           git checkout --orphan gh-pages
           git reset --hard
           git add docs/
