@@ -26,7 +26,7 @@
           </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>
-      <Button class="ml-auto">
+      <Button class="ml-auto" @click="openAppKitModal()">
           <UnplugIcon /> Connect
       </Button>
     </div>
@@ -60,6 +60,48 @@ import { navigationMenuTriggerStyle } from '@/components/ui/navigation-menu';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Mail, GithubIcon, UnplugIcon } from 'lucide-vue-next';
+
+import { createAppKit } from '@reown/appkit/vue'
+import { hardhat, sepolia, mainnet, polygon, type AppKitNetwork } from '@reown/appkit/networks'
+import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
+// 1. Get projectId from https://cloud.reown.com
+const projectId = import.meta.env.VITE_REOWN_PROJECT_ID
+
+// 2. Create a metadata object
+const metadata = {
+  name: 'CoproChain',
+  description: 'Join the CoproChain DAO, vote and propose',
+  url: 'https://example.com', // origin must match your domain & subdomain
+  icons: ['https://avatars.githubusercontent.com/u/179229932']
+}
+
+// 3. Set the networks
+const networks: [AppKitNetwork, ...AppKitNetwork[]] = [hardhat, sepolia, mainnet, polygon ]
+
+// 4. Create Wagmi Adapter
+const wagmiAdapter = new WagmiAdapter({
+  networks,
+  projectId
+})
+
+// 5. Create the modal
+const modal = createAppKit({
+  adapters: [wagmiAdapter],
+  networks,
+  projectId,
+  defaultNetwork: sepolia,
+  metadata,
+  features: {
+    send: false,
+    swaps: false,
+    onramp: false,
+    analytics: true // Optional - defaults to your Cloud configuration
+  },
+})
+
+const openAppKitModal = () => modal ? modal.open() : null;
+
+
 </script>
 
 <style scoped>

@@ -13,14 +13,19 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@reown/appkit": "^1.7.1",
+    "@reown/appkit-adapter-wagmi": "^1.7.1",
+    "@tanstack/vue-query": "^5.71.1",
     "@tanstack/vue-table": "^8.21.2",
     "@vueuse/core": "^13.0.0",
+    "@wagmi/vue": "^0.1.14",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-vue-next": "^0.485.0",
     "reka-ui": "^2.1.1",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
+    "viem": "^2.24.2",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
   },
