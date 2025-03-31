@@ -26,9 +26,10 @@
           </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>
-      <Button class="ml-auto" @click="openAppKitModal()">
+      <!-- <Button class="ml-auto" @click="openAppKitModal()">
           <UnplugIcon /> Connect
-      </Button>
+      </Button> -->
+      <appkit-button class="ml-auto" />
     </div>
     <Separator class="my-3"/>
   </header>
@@ -58,12 +59,12 @@ import {
 } from '@/components/ui/navigation-menu';
 import { navigationMenuTriggerStyle } from '@/components/ui/navigation-menu';
 import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import { Mail, GithubIcon, UnplugIcon } from 'lucide-vue-next';
+import { Mail, GithubIcon } from 'lucide-vue-next';
 
 import { createAppKit } from '@reown/appkit/vue'
-import { hardhat, sepolia, mainnet, polygon, type AppKitNetwork } from '@reown/appkit/networks'
+import { sepolia, mainnet, polygon, type AppKitNetwork } from '@reown/appkit/networks'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
+
 // 1. Get projectId from https://cloud.reown.com
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID
 
@@ -76,7 +77,7 @@ const metadata = {
 }
 
 // 3. Set the networks
-const networks: [AppKitNetwork, ...AppKitNetwork[]] = [hardhat, sepolia, mainnet, polygon ]
+const networks: [AppKitNetwork, ...AppKitNetwork[]] = [sepolia, mainnet, polygon ]
 
 // 4. Create Wagmi Adapter
 const wagmiAdapter = new WagmiAdapter({
@@ -91,6 +92,11 @@ const modal = createAppKit({
   projectId,
   defaultNetwork: sepolia,
   metadata,
+  themeMode: 'light',
+  themeVariables: {
+    '--w3m-border-radius-master': '1px',
+    '--w3m-accent': 'rgba(234, 88, 12, var(--tw-bg-opacity, 1))',
+  },
   features: {
     send: false,
     swaps: false,
@@ -99,17 +105,7 @@ const modal = createAppKit({
   },
 })
 
-const openAppKitModal = () => modal ? modal.open() : null;
-
-
 </script>
 
 <style scoped>
-.sticky-header {
-  @apply sticky top-0 z-50 bg-white shadow-md;
-}
-
-main {
-  @apply flex-1; /* Prend tout l'espace disponible entre header et footer */
-}
 </style>
