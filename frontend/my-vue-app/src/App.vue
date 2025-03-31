@@ -1,7 +1,7 @@
 <template>
-  <div> 
+  <div class="flex flex-col"> 
   <header class="sticky-header">
-    <div class="flex justify-between">
+    <div class="flex">
       <NavigationMenu>
         <NavigationMenuList>
           <NavigationMenuItem>
@@ -34,11 +34,17 @@
   </header>
 
   <RouterView />
-  <footer class="footer">
-    <div class="flex">
-      <p>© 2025 Mon Application. Tous droits réservés.</p>
-    </div>
-  </footer>
+
+  <footer class="fixed bottom-0 py-4">
+      <div class="flex justify-between">
+        <a href="https://github.com/Slinf/copro-chain" target="_blank" class="text-gray-400 hover:text-black transition-colors duration-200">
+          <GithubIcon class="mr-2 h-4 w-4"/>
+        </a>
+        <a href="mailto:contact@votre-email.com" class="text-gray-400 hover:text-black transition-colors duration-200 flex items-center">
+          <Mail class="mr-2 h-4 w-4" />
+        </a>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -53,28 +59,15 @@ import {
 import { navigationMenuTriggerStyle } from '@/components/ui/navigation-menu';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Mail, UnplugIcon } from 'lucide-vue-next';
+import { Mail, GithubIcon, UnplugIcon } from 'lucide-vue-next';
 </script>
 
 <style scoped>
-/* Le header devient sticky */
 .sticky-header {
-  position: sticky;
-  top: 0;
-  z-index: 1000; /* Assure-toi que la barre de navigation soit au-dessus du contenu */
-  background-color: #fff; /* Ajoute une couleur de fond pour éviter les effets de transparence */
+  @apply sticky top-0 z-50 bg-white shadow-md;
 }
 
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.footer {
-  position: sticky;
-  text-align: center;
-  padding: 10px;
-  width: 100%;
-  bottom: 0;
+main {
+  @apply flex-1; /* Prend tout l'espace disponible entre header et footer */
 }
 </style>
