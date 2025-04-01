@@ -2,7 +2,6 @@ import {
   time,
   loadFixture,
 } from "@nomicfoundation/hardhat-toolbox/network-helpers";
-import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import hre from "hardhat";
 
@@ -53,7 +52,7 @@ describe("CoproGovernor", function () {
   describe("quorum", () => {
     it("Should return the quorum set", async function () {
       //Arrange
-      const { governorContract , tokenContract } = await loadFixture(deployCoproGovernorFixture);
+      const { governorContract } = await loadFixture(deployCoproGovernorFixture);
       var block = await hre.ethers.provider.getBlock("latest") ?? { number: 0 };
 
       //Act + Assert
@@ -63,7 +62,7 @@ describe("CoproGovernor", function () {
   describe("votingDelay", () => {
     it("Should return the delay set in deployment", async function () {
       //Arrange
-      const { governorContract , tokenContract } = await loadFixture(deployCoproGovernorFixture);
+      const { governorContract } = await loadFixture(deployCoproGovernorFixture);
 
       //Act + Assert
       expect(await governorContract.votingDelay()).to.equal(86400); // 1 day = 86400s
@@ -72,68 +71,118 @@ describe("CoproGovernor", function () {
   describe("votingPeriod", () => {
     it("Should return the period set in deployment", async function () {
       //Arrange
-      const { governorContract , tokenContract } = await loadFixture(deployCoproGovernorFixture);
+      const { governorContract } = await loadFixture(deployCoproGovernorFixture);
 
       //Act + Assert
       expect(await governorContract.votingPeriod()).to.equal(604800);// 1 week = 604800s
     });
   })
   describe("proposalThreshold", () => {
-    //EveryBody can propose
+    //EveryBody part of the DAO can propose (1 copro token = 1 tantiem)
     it("Should return the proposalThreshold set", async function () {
       //Arrange
       const { governorContract } = await loadFixture(deployCoproGovernorFixture);
 
       //Act + Assert
-      expect(await governorContract.proposalThreshold()).to.equal(0)
+      expect(await governorContract.proposalThreshold()).to.equal(hre.ethers.parseUnits("1", 18))
     });
+  })
+  describe("Voting Power", () => {
+    describe.skip("addNewOwner", () => {
+      it("Should success mint and update voting power", async function () {
+        //Arrange
+        const nowTimestamp = Math.floor(new Date().getTime() / 1000);
+        const { owner, governorContract, account1, account2, tokenContract } = await loadFixture(deployCoproGovernorFixture);
+        //precheck
+        expect(await tokenContract.totalSupply()).to.equal(0);
+        expect(await tokenContract.balanceOf(account1)).to.equal(0);
+        expect(await tokenContract.balanceOf(account2)).to.equal(0);
+        expect(await governorContract.getVotes(account1.address, nowTimestamp)).to.equal(0);
+  
+        //Act
+        var res = await tokenContract.connect(owner).addNewOwner(account1, 100);
+        res.wait();
+        // avoid ERC5805FutureLookup(1743545275, 1743545258) with coverage
+        await hre.ethers.provider.send("evm_mine", []);
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const latestBlock = await hre.ethers.provider.getBlock("latest");
+        const pastTimestamp = latestBlock.timestamp - 10; 
+        
+        //Assert
+        expect(res).not.to.be
+        .revertedWithCustomError(tokenContract,"OwnableUnauthorizedAccount");
+        expect(await governorContract.getVotes(account1.address, pastTimestamp)).to.equal(hre.ethers.parseUnits("100", 18));
+        expect(await tokenContract.totalSupply()).to.equal(hre.ethers.parseUnits("100", 18));
+        expect(await tokenContract.balanceOf(account1)).to.equal(hre.ethers.parseUnits("100", 18));
+        expect(await tokenContract.balanceOf(account2)).to.equal(0);
+      });
+    })
   })
   describe("Proposal Creation", () => {
-    it("Should allow proposal creation", async function () {
-      // Arrange
-      const { governorContract, account1, account2 } = await loadFixture(deployCoproGovernorFixture);
-      
-      const targets = [account1.address];
-      const values = [10];
-      const calldatas = [hre.ethers.toUtf8Bytes("Proposal test")];
-      const description = "Test proposal creation";
-  
-      // Act: Crée une proposition
-      const res = await governorContract.connect(account1).propose(targets, values,calldatas,description);
-      res.wait();
+    describe("propose", () => {
+      it("Should allow proposal creation for copro token holder", async function () {
+        // Arrange
+        const { governorContract, account1, account2, tokenContract } = await loadFixture(deployCoproGovernorFixture);
+        await tokenContract.addNewOwner(account1, 2);
+        // Simuler le passage du temps (augmenter de 3600 secondes, soit 1 heure)
+        await hre.ethers.provider.send("evm_increaseTime", [3600]);
+        await hre.ethers.provider.send("evm_mine", []);  // Mine un nouveau bloc
+        const targets = [account1.address];
+        const values = [10];
+        const calldatas = [hre.ethers.toUtf8Bytes("Proposal test")];
+        const description = "Test proposal creation";
+    
+        // Act: Crée une proposition
+        const res = await governorContract.connect(account1).propose(targets, values,calldatas,description);
 
-      // Assert: Vérifie que l'événement est émis
-      expect(res).to
-      .emit(governorContract, "ProposalCreated")
-      .withArgs(account1.address, description);
+        // Assert: Vérifie que l'événement est émis
+        expect(res).to
+        .emit(governorContract, "ProposalCreated")
+        .withArgs(account1.address, description);
+      });
+      it("Should revert, proposal creation not allowed if account balance is empty", async function () {
+        // Arrange
+        const { governorContract, account1 } = await loadFixture(deployCoproGovernorFixture);
+        
+        const targets = [account1.address];
+        const values = [10];
+        const calldatas = [hre.ethers.toUtf8Bytes("Proposal test")];
+        const description = "Test proposal creation";
+    
+        // Act + Assert 
+        await expect(governorContract.connect(account1).propose(targets, values,calldatas,description)).to.be
+        .revertedWithCustomError(governorContract,"GovernorInsufficientProposerVotes")
+        .withArgs(account1, 0, hre.ethers.parseUnits("1", 18));
+      });
     });
+    describe("makeProposition", () => {
+      it("Should save details of proposition in array", async () => {
+        const { governorContract, account1, tokenContract } = await loadFixture(deployCoproGovernorFixture);
+        await tokenContract.addNewOwner(account1, 1);
+        const targets = [account1.address];
+        const values = [10];
+        const calldatas = [hre.ethers.toUtf8Bytes("Proposal test")];
+        const description = "Test proposal creation";
+        const newProposal = {  
+          id: 0,  
+          title: "Rénovation de l'entrée",
+          description: "Description des tâche",
+          content: "Content",
+          executed: false }
+    
+        // Act: Crée une proposition
+        const res = await governorContract.connect(account1).makeProposition(
+          newProposal, 
+          targets, 
+          values,
+          calldatas);
+
+        // Assert: Vérifie que l'événement est émis
+        expect(res).to
+        .emit(governorContract, "ProposalCreated")
+        .withArgs(account1.address, description);
+      })
+    })
   })
-  // describe("Token Voting Integration", function () {
-  //   it("Should count votes correctly based on token balance", async function () {
-  //     // Arrange
-  //     const { governorContract, tokenContract, account1, account2 } = await loadFixture(deployCoproGovernorFixture);
-  
-  //     // Créez une proposition
-  //     const targets = [account1.address];
-  //     const values = [0];
-  //     const calldatas = [hre.ethers.toUtf8Bytes("Proposal test")];
-  //     const description = "Test proposal creation";
-  
-  //     const trx = await governorContract.connect(account1).propose(targets, values, calldatas, description);
-  //     const receipt = await trx.wait()
-
-  //     // Vérifiez que les utilisateurs ont des jetons
-  //     const balanceBefore = await tokenContract.balanceOf(account2.address);
-  
-  //     // Act: Voter sur la proposition
-
-  //     const proposalId = receipt.events?.find(event => event.event === "ProposalCreated")?.args?.proposalId;
-  //     const voteTx = await governorContract.connect(account2).castVote(proposalId, 1); // Voter pour
-  //     await voteTx.wait();
-  
-  //     // Assert: Vérifiez l'impact du vote en fonction du solde des jetons
-  //     const balanceAfter = await tokenContract.balanceOf(account2.address);
-  //     expect(balanceBefore).to.equal(balanceAfter); // Le solde en jetons ne change pas, mais les votes sont comptabilisés
-  //   });
-  // });
 });

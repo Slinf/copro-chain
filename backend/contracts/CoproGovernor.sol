@@ -21,11 +21,21 @@ contract CoproGovernor is
     GovernorStorage,
     GovernorVotes
 {
+    struct Proposal {
+        uint256 id;
+        string title;
+        string description;
+        string content;
+        bool executed;
+    }
+
+    Proposal[] public proposals;
+
     constructor(
         IVotes _token
     )
         Governor("CoproGovernor")
-        GovernorSettings(1 days, 1 weeks, 0)
+        GovernorSettings(1 days, 1 weeks, 1e18)
         GovernorVotes(_token)
     {}
 
@@ -37,7 +47,6 @@ contract CoproGovernor is
     }
 
     // The following functions are overrides required by Solidity.
-
     function votingDelay()
         public
         view
@@ -74,5 +83,47 @@ contract CoproGovernor is
     ) internal override(Governor, GovernorStorage) returns (uint256) {
         return
             super._propose(targets, values, calldatas, description, proposer);
+    }
+
+    /**
+     * @dev Allow to retrieve proposition
+     * @param from index start.
+     * @param to index end
+     */
+    function getAllPropositions(
+        uint from,
+        uint to
+    ) external view returns (Proposal[] memory) {
+        return proposals;
+    }
+
+    /**
+     * @dev Allow to store more details about the proposal on the chain
+     * @param newProposal information of the new proposition
+     * @param targets optional DAO parameters => currently unused in CoproChain Governance
+     * @param values optional DAO parameters => currently unused in CoproChain Governance
+     * @param calldatas optional DAO parameters => currently unused in CoproChain Governance
+     */
+    function makeProposition(
+        Proposal calldata newProposal,
+        address[] calldata targets,
+        uint256[] calldata values,
+        bytes[] calldata calldatas
+    ) public returns (uint256) {
+        uint256 idNewProposal = propose(
+            targets,
+            values,
+            calldatas,
+            newProposal.description
+        );
+        require(idNewProposal > 0, "Invalid id proposal");
+        Proposal memory newProposal = Proposal(
+            idNewProposal,
+            newProposal.title,
+            newProposal.description,
+            newProposal.content,
+            false
+        );
+        proposals.push(newProposal);
     }
 }

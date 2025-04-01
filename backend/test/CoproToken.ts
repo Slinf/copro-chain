@@ -2,7 +2,6 @@ import {
   time,
   loadFixture,
 } from "@nomicfoundation/hardhat-toolbox/network-helpers";
-import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import hre from "hardhat";
 
@@ -85,7 +84,8 @@ describe("CoproToken", function () {
 
       //Assert
       expect(res?.status).to.equal(1);
-      expect(await tokenContract.totalSupply()).to.equal(20);
+      const totalSupplyExepected = hre.ethers.parseUnits("20", 18);
+      expect(await tokenContract.totalSupply()).to.equal(totalSupplyExepected);
     });
     it("Should modify balances", async function () {
       //Arrange
@@ -109,10 +109,10 @@ describe("CoproToken", function () {
       var res = await tokenContract.distributeToken(owners);
 
       //Assert
-      expect(await tokenContract.totalSupply()).to.equal(110);
-      expect(await tokenContract.balanceOf(owner)).to.equal(50);
-      expect(await tokenContract.balanceOf(account1)).to.equal(20);
-      expect(await tokenContract.balanceOf(account2)).to.equal(40);
+      expect(await tokenContract.totalSupply()).to.equal(hre.ethers.parseUnits("110", 18));
+      expect(await tokenContract.balanceOf(owner)).to.equal(hre.ethers.parseUnits("50", 18));
+      expect(await tokenContract.balanceOf(account1)).to.equal(hre.ethers.parseUnits("20", 18));
+      expect(await tokenContract.balanceOf(account2)).to.equal(hre.ethers.parseUnits("40", 18));
 
     });
     it("Should emit event TokensDistributed when sucess call from contract owner", async function () {
@@ -175,20 +175,20 @@ describe("CoproToken", function () {
       .withArgs(account1);
     });
   })
-  describe("mint", () => {
-    it("Should revert if someone other than owner try to mint", async function () {
+  describe("addNewOwner", () => {
+    it("Should revert if someone other than owner try to call addNewOwner", async function () {
       //Arrange
       const { tokenContract, owner, account1} = await loadFixture(deployCoproTokenFixture);
 
       //Act + Assert
-      await expect(tokenContract.connect(account1).mint(account1, 1000)).to.be
+      await expect(tokenContract.connect(account1).addNewOwner(account1, 1000)).to.be
       .revertedWithCustomError(tokenContract,"OwnableUnauthorizedAccount")
       .withArgs(account1);
       expect(await tokenContract.totalSupply()).to.equal(0);
       expect(await tokenContract.balanceOf(account1)).to.equal(0);
       expect(await tokenContract.balanceOf(owner)).to.equal(0);
     });
-    it("Should success if owner call mint", async function () {
+    it("Should success if owner call addNewOwner", async function () {
       //Arrange
       const { tokenContract, owner, account1} = await loadFixture(deployCoproTokenFixture);
 
@@ -198,13 +198,13 @@ describe("CoproToken", function () {
       expect(await tokenContract.balanceOf(account1)).to.equal(0);
 
       //Act
-      var res = await tokenContract.connect(owner).mint(account1, 100);
+      var res = await tokenContract.connect(owner).addNewOwner(account1, 100);
 
       //Assert
       expect(res).not.to.be
       .revertedWithCustomError(tokenContract,"OwnableUnauthorizedAccount");
-      expect(await tokenContract.totalSupply()).to.equal(100);
-      expect(await tokenContract.balanceOf(account1)).to.equal(100);
+      expect(await tokenContract.totalSupply()).to.equal(hre.ethers.parseUnits("100", 18));
+      expect(await tokenContract.balanceOf(account1)).to.equal(hre.ethers.parseUnits("100", 18));
       expect(await tokenContract.balanceOf(owner)).to.equal(0);
     });
     it("Should emit TokensMinted event", async () => {
@@ -212,12 +212,24 @@ describe("CoproToken", function () {
       const { tokenContract, owner, account1} = await loadFixture(deployCoproTokenFixture);
 
       //Act
-      var res = await tokenContract.mint(account1, 100);
+      var res = await tokenContract.addNewOwner(account1, 100);
 
       //Assert
       expect(res).to
         .emit(tokenContract, "TokensMinted")
         .withArgs(account1, 100);
+    });
+    it("Should emit TokensDelegatedForVote event", async () => {
+      //Arrange
+      const { tokenContract, owner, account1} = await loadFixture(deployCoproTokenFixture);
+
+      //Act
+      var res = await tokenContract.addNewOwner(account1, 100);
+
+      //Assert
+      expect(res).to
+        .emit(tokenContract, "TokensDelegatedForVote")
+        .withArgs(account1, account1);
     });
   })
   describe("clock", () => {

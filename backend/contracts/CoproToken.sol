@@ -18,7 +18,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
  */
 contract CoproToken is ERC20, Ownable, ERC20Permit, ERC20Votes {
     /**
-     * @dev  Adresse du syndic pour gérer les ventes
+     * @dev  Syndic Adress / Admin adress - Person/Entity that manage the co-ownership
      */
     address public syndic;
 
@@ -30,9 +30,19 @@ contract CoproToken is ERC20, Ownable, ERC20Permit, ERC20Votes {
 
     /**
      * @dev  Event throw when token are distributed successfuly
+     * @param owner propriétaire / owner adress
+     * @param amount amount of token distributed
      */
     event TokensDistributed(address indexed owner, uint256 amount);
+
+    /**
+     * @dev  Event throw when new token are minted
+     * @param to propriétaire / owner adress
+     * @param amount amount of token distributed
+     */
     event TokensMinted(address indexed to, uint256 amount);
+
+    event TokensDelegatedForVote(address indexed from, address indexed to);
 
     constructor(
         address initialOwner
@@ -44,27 +54,44 @@ contract CoproToken is ERC20, Ownable, ERC20Permit, ERC20Votes {
         syndic = initialOwner;
     }
 
+    /**
+     * @dev  Main methods to set a new project, and share token by property
+     * @param owners Copropriétaire / Co-ownership owners / Condominium owners
+     */
     function distributeToken(
         OwnerData[] calldata owners
     ) public onlyOwner returns (bool) {
         // Distribution des tokens selon les tantièmes
         // Pouvoir redistribuer les tokens après déploiement ?
         for (uint256 i = 0; i < owners.length; i++) {
-            _mint(owners[i].accountAddress, owners[i].tantiem);
+            addNewOwner(owners[i].accountAddress, owners[i].tantiem);
             emit TokensDistributed(owners[i].accountAddress, owners[i].tantiem); // Émission d'un événement
         }
         return true;
     }
 
-    function mint(address to, uint256 amount) public onlyOwner {
-        _mint(to, amount);
+    /**
+     * @dev  Allow to add an new person in the DAO/Copro by mint token and allow its vote by delegating automatically
+     * @param to address of the owner
+     * @param amount amount of token that match property tantième
+     */
+    function addNewOwner(address to, uint256 amount) public onlyOwner {
+        _mint(to, amount * 10 ** decimals());
         emit TokensMinted(to, amount);
+        _delegate(to, to);
+        emit TokensDelegatedForVote(to, to);
     }
 
+    /**
+     * @dev Default requirement method with timestamp mode
+     */
     function clock() public view override returns (uint48) {
         return uint48(block.timestamp);
     }
 
+    /**
+     * @dev Default time mode setting
+     */
     // solhint-disable-next-line func-name-mixedcase
     function CLOCK_MODE() public pure override returns (string memory) {
         return "mode=timestamp";
