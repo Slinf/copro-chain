@@ -24,12 +24,28 @@ contract CoproGovernor is
     struct Proposal {
         uint256 id;
         string title;
-        string description;
-        string content;
-        bool executed;
     }
 
-    Proposal[] public proposals;
+    struct ProposalDetail {
+        string description;
+        string content;
+    }
+
+    struct ProposalPaylod {
+        string title;
+        string description;
+        string content;
+    }
+
+    Proposal[] proposals;
+    mapping(uint256 => ProposalDetail) proposalDetailsById;
+
+    error PropositionCreationFailed();
+    error OutOfBoundError();
+    error InvalidRangeError();
+
+    event ProposalDetailAdded(address by);
+    event ProposalAdded(address by, Proposal proposal);
 
     constructor(
         IVotes _token
@@ -86,26 +102,63 @@ contract CoproGovernor is
     }
 
     /**
-     * @dev Allow to retrieve proposition
-     * @param from index start.
-     * @param to index end
+     * @dev Retrieve proposition core data for governance list
+     * @param startIndex index start
+     * @param endIndex index end
      */
     function getAllPropositions(
-        uint from,
-        uint to
+        uint startIndex,
+        uint endIndex
     ) external view returns (Proposal[] memory) {
-        return proposals;
+        if (endIndex > proposals.length - 1) {
+            revert OutOfBoundError();
+        }
+        if (startIndex > endIndex) {
+            revert InvalidRangeError();
+        }
+        if (endIndex - startIndex > 20) {
+            revert InvalidRangeError();
+        }
+        uint resultSize = endIndex - startIndex + 1;
+        Proposal[] memory selectedProposals = new Proposal[](resultSize);
+        uint256 i;
+        for (i = startIndex; i < resultSize; i++) {
+            selectedProposals[i] = proposals[startIndex + i];
+        }
+        return selectedProposals;
     }
 
     /**
-     * @dev Allow to store more details about the proposal on the chain
-     * @param newProposal information of the new proposition
+     * @dev Retrieve proposition details data for governance list 
+        Reverts if proposalId is not a known proposal thanks to proposalDetails 
+     * @param id proposalId
+     */
+    function getPropositionDetails(
+        uint256 id
+    ) external view returns (ProposalDetail memory) {
+        proposalDetails(id);
+        return proposalDetailsById[id];
+    }
+
+    /**
+     * @dev Generate ipfs file of the proposal, default methods used on proposal execution
+     */
+    function makeResumeProposal()
+        external
+        view
+        returns (ProposalDetail[] memory)
+    {}
+
+    /**
+     * @dev Allow to make new proposition with targets, values or caldata as a standard DAO proposition
+            This override allow to store more details about the proposal on the chain
+     * @param newProposal the new proposition
      * @param targets optional DAO parameters => currently unused in CoproChain Governance
      * @param values optional DAO parameters => currently unused in CoproChain Governance
      * @param calldatas optional DAO parameters => currently unused in CoproChain Governance
      */
     function makeProposition(
-        Proposal calldata newProposal,
+        ProposalPaylod calldata newProposal,
         address[] calldata targets,
         uint256[] calldata values,
         bytes[] calldata calldatas
@@ -116,14 +169,18 @@ contract CoproGovernor is
             calldatas,
             newProposal.description
         );
-        require(idNewProposal > 0, "Invalid id proposal");
-        Proposal memory newProposal = Proposal(
-            idNewProposal,
-            newProposal.title,
+        if (idNewProposal == 0) {
+            revert PropositionCreationFailed();
+        }
+        Proposal memory proposal = Proposal(idNewProposal, newProposal.title);
+
+        proposals.push(proposal); //check proposals count == uint256 max = proposalCount();
+        emit ProposalAdded(msg.sender, proposal);
+        proposalDetailsById[idNewProposal] = ProposalDetail(
             newProposal.description,
-            newProposal.content,
-            false
+            newProposal.content
         );
-        proposals.push(newProposal);
+        emit ProposalDetailAdded(msg.sender);
+        return idNewProposal;
     }
 }

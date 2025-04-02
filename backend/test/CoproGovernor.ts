@@ -25,6 +25,21 @@ describe("CoproGovernor", function () {
     return { governorContract, tokenContract, owner, account1, account2 };
   }
 
+  async function deployCoproGovernorAndAddOneOwnerFixture() {
+    const { owner, governorContract, account1, account2, tokenContract } = await loadFixture(deployCoproGovernorFixture);
+        await tokenContract.addNewOwner(account1, 1);
+        const targets = [account1.address];
+        const values = [10];
+        const calldatas = [hre.ethers.toUtf8Bytes("Proposal test")];
+        const newProposal = {  
+          title: "Rénovation de l'entrée",
+          description: "Description des tâche",
+          content: "Content" }
+
+    return { account1, governorContract, newProposal, calldatas, values, targets };
+  }
+
+
   describe("Deployment", () => {
     it("Should set Governor name", async function () {
       //Arrange
@@ -88,8 +103,8 @@ describe("CoproGovernor", function () {
     });
   })
   describe("Voting Power", () => {
-    describe.skip("addNewOwner", () => {
-      it("Should success mint and update voting power", async function () {
+    describe("addNewOwner", () => {
+      it.skip("Should success mint and update voting power", async function () {
         //Arrange
         const nowTimestamp = Math.floor(new Date().getTime() / 1000);
         const { owner, governorContract, account1, account2, tokenContract } = await loadFixture(deployCoproGovernorFixture);
@@ -157,32 +172,91 @@ describe("CoproGovernor", function () {
       });
     });
     describe("makeProposition", () => {
-      it("Should save details of proposition in array", async () => {
-        const { governorContract, account1, tokenContract } = await loadFixture(deployCoproGovernorFixture);
-        await tokenContract.addNewOwner(account1, 1);
-        const targets = [account1.address];
-        const values = [10];
-        const calldatas = [hre.ethers.toUtf8Bytes("Proposal test")];
-        const description = "Test proposal creation";
-        const newProposal = {  
-          id: 0,  
-          title: "Rénovation de l'entrée",
-          description: "Description des tâche",
-          content: "Content",
-          executed: false }
-    
-        // Act: Crée une proposition
-        const res = await governorContract.connect(account1).makeProposition(
-          newProposal, 
-          targets, 
-          values,
-          calldatas);
+      it("Should proposalCount match expected", async () => {
+        const { account1, governorContract, newProposal, targets, values, calldatas } = await loadFixture(deployCoproGovernorAndAddOneOwnerFixture);
 
-        // Assert: Vérifie que l'événement est émis
-        expect(res).to
-        .emit(governorContract, "ProposalCreated")
-        .withArgs(account1.address, description);
+        expect(await governorContract.proposalCount()).to.equal(0);
+
+        //Act
+        var res = await governorContract.connect(account1).makeProposition(
+          newProposal,
+          targets,
+          values, 
+          calldatas 
+        );
+        res.wait();
+
+        //Assert
+        expect(await governorContract.proposalCount()).to.equal(1);
       })
+      it("should save the new proposition", async function () {
+        const { account1, governorContract, newProposal, targets, values, calldatas } = await loadFixture(deployCoproGovernorAndAddOneOwnerFixture);
+       
+        //Act Assert
+        await expect(
+          governorContract.connect(account1).makeProposition(
+            newProposal,
+            targets,
+            values, 
+            calldatas 
+          )
+        ).emit(governorContract, "ProposalCreated");
+      });
+      it("Should proposalCount match expected", async () => {
+        const { account1, governorContract, newProposal, targets, values, calldatas } = await loadFixture(deployCoproGovernorAndAddOneOwnerFixture);
+        expect(await governorContract.proposalCount()).to.equal(0);
+
+        //Act Assert
+        var res = await governorContract.connect(account1).makeProposition(
+          newProposal,
+          targets,
+          values, 
+          calldatas 
+        );
+        res.wait();
+
+        expect(await governorContract.proposalCount()).to.equal(1);
+      })
+      it("Should save main info in governor contracts", async () => {
+        const { account1, governorContract, newProposal, targets, values, calldatas } = await loadFixture(deployCoproGovernorAndAddOneOwnerFixture);
+        expect(await governorContract.proposalCount()).to.equal(0);
+
+        //Act Assert
+        var res = await governorContract.connect(account1).makeProposition(
+          newProposal,
+          targets,
+          values, 
+          calldatas 
+        );
+        res.wait();
+        var res2 = await governorContract.connect(account1).makeProposition(
+          {  
+            title: "Autre proposition",
+            description: "Voici une description",
+            content: "..." 
+          },
+          targets,
+          values, 
+          calldatas 
+        );
+        res2.wait();
+
+        var proposals = await governorContract.getAllPropositions(0, 1);
+        const formattedProposals = proposals.map(proposal => ({
+          id: proposal.id.toString(),  // Conversion BigNumber → Number
+          description: proposal.title
+      }));
+
+        console.log(formattedProposals);
+
+        expect(res).to
+        .emit(governorContract, "ProposalDetailAdded")
+        .withArgs(account1.address);
+
+        expect(res).to
+        .emit(governorContract, "ProposalAdded")
+        .withArgs(account1.address, newProposal);
+      });
     })
   })
 });
