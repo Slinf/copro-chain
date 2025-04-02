@@ -241,21 +241,32 @@ describe("CoproGovernor", function () {
         );
         res2.wait();
 
-        var proposals = await governorContract.getAllPropositions(0, 1);
+        var res3 = await governorContract.connect(account1).makeProposition(
+          {  
+            title: "Ceci est la 3ème proposition",
+            description: "AHAHAh on avance on avance",
+            content: "YEAH" 
+          },
+          targets,
+          values, 
+          calldatas 
+        );
+        res3.wait();
+
+        var proposals = await governorContract.getAllPropositions(0, 2);
         const formattedProposals = proposals.map(proposal => ({
           id: proposal.id.toString(),  // Conversion BigNumber → Number
-          description: proposal.title
+          title: proposal.title,
+          state: proposal[2],
+          votes: proposal[3]
       }));
 
         console.log(formattedProposals);
 
-        expect(res).to
-        .emit(governorContract, "ProposalDetailAdded")
-        .withArgs(account1.address);
-
-        expect(res).to
-        .emit(governorContract, "ProposalAdded")
-        .withArgs(account1.address, newProposal);
+        expect(formattedProposals.length).to.equal(3)
+        expect(formattedProposals[0].title).to.equal("Rénovation de l'entrée")
+        expect(formattedProposals[1].title).to.equal("Autre proposition")
+        expect(formattedProposals[2].title).to.equal("Ceci est la 3ème proposition")
       });
     })
   })

@@ -26,6 +26,12 @@ contract CoproGovernor is
         string title;
     }
 
+    struct Votes {
+        uint256 againstVotes;
+        uint256 forVotes;
+        uint256 abstainVotes;
+    }
+
     struct ProposalDetail {
         string description;
         string content;
@@ -37,6 +43,13 @@ contract CoproGovernor is
         string content;
     }
 
+    struct ProposalResult {
+        uint256 id;
+        string title;
+        ProposalState state;
+        Votes votes;
+    }
+
     Proposal[] proposals;
     mapping(uint256 => ProposalDetail) proposalDetailsById;
 
@@ -44,8 +57,7 @@ contract CoproGovernor is
     error OutOfBoundError();
     error InvalidRangeError();
 
-    event ProposalDetailAdded(address by);
-    event ProposalAdded(address by, Proposal proposal);
+    event ProposalAddedInGovernor(address by, Proposal proposal);
 
     constructor(
         IVotes _token
@@ -109,7 +121,7 @@ contract CoproGovernor is
     function getAllPropositions(
         uint startIndex,
         uint endIndex
-    ) external view returns (Proposal[] memory) {
+    ) external view returns (ProposalResult[] memory) {
         if (endIndex > proposals.length - 1) {
             revert OutOfBoundError();
         }
@@ -120,10 +132,23 @@ contract CoproGovernor is
             revert InvalidRangeError();
         }
         uint resultSize = endIndex - startIndex + 1;
-        Proposal[] memory selectedProposals = new Proposal[](resultSize);
+        ProposalResult[] memory selectedProposals = new ProposalResult[](
+            resultSize
+        );
         uint256 i;
         for (i = startIndex; i < resultSize; i++) {
-            selectedProposals[i] = proposals[startIndex + i];
+            (
+                uint256 against,
+                uint256 forVotes,
+                uint256 abstain
+            ) = proposalVotes(proposals[startIndex + i].id);
+
+            selectedProposals[i] = ProposalResult(
+                proposals[startIndex + i].id,
+                proposals[startIndex + i].title,
+                state(proposals[startIndex + i].id),
+                Votes(against, forVotes, abstain)
+            );
         }
         return selectedProposals;
     }
@@ -175,12 +200,11 @@ contract CoproGovernor is
         Proposal memory proposal = Proposal(idNewProposal, newProposal.title);
 
         proposals.push(proposal); //check proposals count == uint256 max = proposalCount();
-        emit ProposalAdded(msg.sender, proposal);
+        emit ProposalAddedInGovernor(msg.sender, proposal);
         proposalDetailsById[idNewProposal] = ProposalDetail(
             newProposal.description,
             newProposal.content
         );
-        emit ProposalDetailAdded(msg.sender);
         return idNewProposal;
     }
 }
