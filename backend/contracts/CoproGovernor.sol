@@ -53,17 +53,23 @@ contract CoproGovernor is
     Proposal[] proposals;
     mapping(uint256 => ProposalDetail) proposalDetailsById;
 
-    error PropositionCreationFailed();
     error OutOfBoundError();
+    error InvalidOrderRangeError();
     error InvalidRangeError();
 
     event ProposalAddedInGovernor(address by, Proposal proposal);
 
+    /**
+     * @dev Constructor set params of dao
+     * Dev mode initialVotingDelay = 1 seconds, initialVotingPeriod = 1 minutes
+     * Prod mode initialVotingDelay = 1 day, initialVotingPeriod = 1 week
+     * @param _token ER20 governance token
+     */
     constructor(
         IVotes _token
     )
         Governor("CoproGovernor")
-        GovernorSettings(1 days, 1 weeks, 1e18)
+        GovernorSettings(1 seconds, 1 minutes, 1e18)
         GovernorVotes(_token)
     {}
 
@@ -122,11 +128,14 @@ contract CoproGovernor is
         uint startIndex,
         uint endIndex
     ) external view returns (ProposalResult[] memory) {
+        if (proposals.length == 0) {
+            return new ProposalResult[](0);
+        }
         if (endIndex > proposals.length - 1) {
             revert OutOfBoundError();
         }
         if (startIndex > endIndex) {
-            revert InvalidRangeError();
+            revert InvalidOrderRangeError();
         }
         if (endIndex - startIndex > 20) {
             revert InvalidRangeError();
@@ -194,9 +203,6 @@ contract CoproGovernor is
             calldatas,
             newProposal.description
         );
-        if (idNewProposal == 0) {
-            revert PropositionCreationFailed();
-        }
         Proposal memory proposal = Proposal(idNewProposal, newProposal.title);
 
         proposals.push(proposal); //check proposals count == uint256 max = proposalCount();
