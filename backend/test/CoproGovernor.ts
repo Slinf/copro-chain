@@ -312,6 +312,13 @@ describe("CoproGovernor", function () {
   })
   describe("Get Infos", () => {
     describe("getAllPropositions", () => {
+      it("Should return empty object", async () => {
+        const { governorContract } = await loadFixture(deployCoproGovernorFixture);
+
+        var res = await governorContract.getAllPropositions(0,10);
+        
+        expect(res.length).to.equal(0);
+      });
       it("Should revert with OutOfBoundError", async () => {
         const { governorContract } = await loadFixture(deployCoproGovernorAndMultipleProposalsFixture);
 
@@ -340,6 +347,17 @@ describe("CoproGovernor", function () {
             [hre.ethers.toUtf8Bytes("Proposal test")]);
         }
         await expect(governorContract.getAllPropositions(0,21)).to.be.revertedWithCustomError(governorContract,"InvalidRangeError");
+      });
+    });
+    describe("getPropositionDetails", () => {
+      it("Should return details of proposal", async () => {
+        const { governorContract, account1 } = await loadFixture(deployCoproGovernorAndMultipleProposalsFixture);
+        var id = "73984644665711994740788300719172920271804219374445738186094308245127487564796";
+        
+        var res = await governorContract.getPropositionDetails(id);
+
+        expect(res[0]).to.equal('Description des tâche');
+        expect(res[1]).to.equal('Content');
       });
     })
   })
