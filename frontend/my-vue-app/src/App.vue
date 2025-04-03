@@ -15,13 +15,13 @@
             </NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <NavigationMenuLink :class="navigationMenuTriggerStyle()" :as="RouterLink" to="/about" >
+            <NavigationMenuLink :class="navigationMenuTriggerStyle()" :as="RouterLink" to="/token" >
               Token
             </NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <NavigationMenuLink :class="navigationMenuTriggerStyle()" :as="RouterLink" to="/about" >
-              About
+            <NavigationMenuLink :class="navigationMenuTriggerStyle()" :as="RouterLink" to="/administration" >
+              Administration
             </NavigationMenuLink>
           </NavigationMenuItem>
         </NavigationMenuList>

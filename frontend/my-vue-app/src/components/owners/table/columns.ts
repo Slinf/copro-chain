@@ -1,6 +1,6 @@
 import type { ColumnDef } from '@tanstack/vue-table'
 import { h } from 'vue'
-import type { Proposal } from './proposal';
+import type { Proposal } from '../../../models/proposal';
 
 export const columns: ColumnDef<Proposal>[] = [
   {
