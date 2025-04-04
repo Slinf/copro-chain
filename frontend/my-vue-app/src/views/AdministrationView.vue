@@ -2,12 +2,11 @@
   <div class="container flex py-10">
     <div class="container pr-5">
       <DataTable :columns="columns" :data="data" /> 
-
     <div class="container">
-
     </div>
   </div>
-  </template>
+  </div>
+</template>
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
 import { Mail } from 'lucide-vue-next'
