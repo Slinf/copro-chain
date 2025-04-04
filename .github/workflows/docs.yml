@@ -39,9 +39,8 @@ jobs:
     
       - name: Deploy Documentation to GitHub Pages
         run: |
-          cd .\backend\ &&
           git checkout --orphan gh-pages
           git reset --hard
-          git add docs
+          git add backend/docs
           git commit -m "Deploy documentation"
           git push --force https://x-access-token:${{ secrets.DOC_PAT }}@github.com/Slinf/copro-chain.git gh-pages

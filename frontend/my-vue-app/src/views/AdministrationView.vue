@@ -1,36 +1,37 @@
 <template>
   <div class="container flex py-10">
     <div class="container pr-5">
-      <DataTable :columns="columns" :data="data" /> 
-    <div class="container">
-    </div>
+      <DataTable :columns="columns" :data="ownerList" /> 
+      <div class="container"></div>
   </div>
   </div>
 </template>
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
 import { Mail } from 'lucide-vue-next'
-import { DataTable } from '@/components/owners/table/data-table.vue';
+import { DataTable } from "@/components/owners/table";
+import { columns } from "@/components/owners/table/columns";
+import type { User } from '@/models/user';
+import type { Owner } from "@/models/owner"; 
 import { onMounted, ref } from 'vue';
 
 const ownerList = ref<Owner[]>([])
+const user = ref<User>();
 
 async function getOwnerList(): Promise<Owner[]> {
   // Fetch data from your API here.
   return [
     {
       id: '728ed52f',
-      title: 'Proposition 1',
-      amount: 100,
-      status: 'pending',
-      description: "Devis porte d'entrée",
+      name: 'Jeremy',
+      firstname: 'Jeremy',
+      address: "",
     },
     {
       id: '728ed52f',
-      title: 'Proposition 2',
-      amount: 100,
-      status: 'pending',
-      description: 'Faire rénover la cours intérieur',
+      name: 'Clément',
+      firstname: 'Br',
+      address: "",
     },
   ]
 }
@@ -47,7 +48,7 @@ async function getConnectedUser(): Promise<User> {
 }
 
 onMounted(async () => {
-  proposalList.value = await getProposals()
+  ownerList.value = await getOwnerList()
   user.value = await getConnectedUser()
 })
 </script>

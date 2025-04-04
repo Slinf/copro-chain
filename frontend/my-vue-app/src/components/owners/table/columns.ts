@@ -1,8 +1,9 @@
 import type { ColumnDef } from '@tanstack/vue-table'
 import { h } from 'vue'
 import type { Proposal } from '../../../models/proposal';
+import type { Owner } from '../../../models/owner';
 
-export const columns: ColumnDef<Proposal>[] = [
+export const columns: ColumnDef<Owner>[] = [
   {
     accessorKey: 'id',
     header: () => h('div', { class: 'text-right' }, 'Id'),
