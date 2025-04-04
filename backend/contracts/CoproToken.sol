@@ -61,6 +61,7 @@ contract CoproToken is ERC20, Ownable, ERC20Permit, ERC20Votes {
     function distributeToken(
         OwnerData[] calldata owners
     ) public onlyOwner returns (bool) {
+        require(owners.length <= 10, "Max 10 owners by call");
         // Distribution des tokens selon les tantièmes
         // Pouvoir redistribuer les tokens après déploiement ?
         for (uint256 i = 0; i < owners.length; i++) {
