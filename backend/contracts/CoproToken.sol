@@ -22,11 +22,18 @@ contract CoproToken is ERC20, Ownable, ERC20Permit, ERC20Votes {
      */
     address public syndic;
 
-    // Structure pour représenter un propriétaire avec son tantième
+    /**
+     * @dev  Struc that represent owner adress with tantième
+     */
     struct OwnerData {
         address accountAddress;
         uint256 tantiem;
     }
+
+    /**
+     * @dev  Error when array too large
+     */
+    error MaxLimitOwnerError();
 
     /**
      * @dev  Event throw when token are distributed successfuly
@@ -42,6 +49,11 @@ contract CoproToken is ERC20, Ownable, ERC20Permit, ERC20Votes {
      */
     event TokensMinted(address indexed to, uint256 amount);
 
+    /**
+     * @dev  Event throw when new token are delegated
+     * @param from source accound
+     * @param to target account
+     */
     event TokensDelegatedForVote(address indexed from, address indexed to);
 
     constructor(
@@ -58,17 +70,14 @@ contract CoproToken is ERC20, Ownable, ERC20Permit, ERC20Votes {
      * @dev  Main methods to set a new project, and share token by property
      * @param owners Copropriétaire / Co-ownership owners / Condominium owners
      */
-    function distributeToken(
-        OwnerData[] calldata owners
-    ) public onlyOwner returns (bool) {
-        require(owners.length <= 10, "Max 10 owners by call");
-        // Distribution des tokens selon les tantièmes
-        // Pouvoir redistribuer les tokens après déploiement ?
+    function distributeToken(OwnerData[] calldata owners) public onlyOwner {
+        if (owners.length > 10) {
+            revert MaxLimitOwnerError();
+        }
         for (uint256 i = 0; i < owners.length; i++) {
             addNewOwner(owners[i].accountAddress, owners[i].tantiem);
-            emit TokensDistributed(owners[i].accountAddress, owners[i].tantiem); // Émission d'un événement
+            emit TokensDistributed(owners[i].accountAddress, owners[i].tantiem);
         }
-        return true;
     }
 
     /**

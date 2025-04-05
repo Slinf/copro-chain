@@ -174,6 +174,27 @@ describe("CoproToken", function () {
       .revertedWithCustomError(tokenContract,"OwnableUnauthorizedAccount")
       .withArgs(account1);
     });
+    it("Should revert when array in params too large", async function () {
+      //Arrange
+      const { tokenContract, owner, account1} = await loadFixture(deployCoproTokenFixture);
+      var owners = [
+        {accountAddress: owner.address,tantiem: 50},
+        {accountAddress: account1.address,tantiem: 20},
+        {accountAddress: account1.address,tantiem: 30},
+        {accountAddress: account1.address,tantiem: 40},
+        {accountAddress: account1.address,tantiem: 50},
+        {accountAddress: account1.address,tantiem: 60},
+        {accountAddress: account1.address,tantiem: 70},
+        {accountAddress: account1.address,tantiem: 80},
+        {accountAddress: account1.address,tantiem: 90},
+        {accountAddress: account1.address,tantiem: 20},
+        {accountAddress: account1.address,tantiem: 20},
+      ];
+
+      //Act and Assert
+      await expect(tokenContract.connect(owner).distributeToken(owners)).to.be
+      .revertedWithCustomError(tokenContract,"MaxLimitOwnerError");
+    });
   })
   describe("addNewOwner", () => {
     it("Should revert if someone other than owner try to call addNewOwner", async function () {

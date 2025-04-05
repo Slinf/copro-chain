@@ -60,7 +60,7 @@ contract CoproGovernor is
     event ProposalAddedInGovernor(address by, Proposal proposal);
 
     /**
-     * @dev Constructor set params of dao
+     * @dev Constructor set params of DAO
      * Dev mode initialVotingDelay = 1 seconds, initialVotingPeriod = 1 minutes
      * Prod mode initialVotingDelay = 1 day, initialVotingPeriod = 1 week
      * @param _token ER20 governance token
