@@ -5,25 +5,20 @@ import type { Owner } from '../../../models/owner';
 
 export const columns: ColumnDef<Owner>[] = [
   {
-    accessorKey: 'id',
-    header: () => h('div', { class: 'text-right' }, 'Id'),
+    accessorKey: 'adress',
+    header: () => h('div', { class: 'text-right' }, 'Address'),
     cell: ({ row }) => {
-      const id = Number.parseFloat(row.getValue('id'))
-  
-      return h('div', { class: 'text-right font-medium' }, id)
+      const address = Number.parseFloat(row.getValue('address'))
+      return h('div', { class: 'text-right font-medium' }, address)
     },
   },
   {
     accessorKey: 'amount',
-    header: () => h('div', { class: 'text-right' }, 'Amount'),
+    header: () => h('div', { class: 'text-right' }, 'Token Amount'),
     cell: ({ row }) => {
-      const amount = Number.parseFloat(row.getValue('amount'))
-      const formatted = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-      }).format(amount)
+      const amount = row.getValue('amount') as string
 
-      return h('div', { class: 'text-right font-medium' }, formatted)
+      return h('div', { class: 'text-right font-medium' }, amount)
     },
   },
   {

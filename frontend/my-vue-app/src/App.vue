@@ -1,4 +1,5 @@
 <template>
+  <Toaster />
   <div class="flex flex-col"> 
   <header class="sticky-header">
     <div class="flex">
@@ -20,7 +21,7 @@
             </NavigationMenuLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <NavigationMenuLink :class="navigationMenuTriggerStyle()" :as="RouterLink" to="/administration" >
+            <NavigationMenuLink :class="navigationMenuTriggerStyle()" :as="RouterLink" to="/admin" >
               Administration
             </NavigationMenuLink>
           </NavigationMenuItem>
@@ -57,6 +58,7 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
 } from '@/components/ui/navigation-menu';
+import Toaster from '@/components/ui/toast/Toaster.vue'
 import { navigationMenuTriggerStyle } from '@/components/ui/navigation-menu';
 import { Separator } from '@/components/ui/separator';
 import { Mail, GithubIcon } from 'lucide-vue-next';
@@ -64,6 +66,11 @@ import { Mail, GithubIcon } from 'lucide-vue-next';
 import { createAppKit } from '@reown/appkit/vue'
 import { sepolia, mainnet, polygon, type AppKitNetwork } from '@reown/appkit/networks'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
+import { readContract, getAccount } from "@wagmi/core";
+import { config } from "@/config";
+import { watchEffect, ref, onMounted, watch} from 'vue';
+import { useAccountStore } from '@/stores/account';
+import { useAppKit, useAppKitAccount } from '@reown/appkit/vue'
 
 // 1. Get projectId from https://cloud.reown.com
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID
@@ -105,7 +112,23 @@ const modal = createAppKit({
   },
 })
 
-</script>
+const accountStore = useAccountStore();
+const accountData = useAppKitAccount();
 
+// Sauvegarder les données dans localStorage lorsque le compte change
+watch(() => accountData.value.address, (newAddress) => {
+  if (newAddress) {
+    localStorage.setItem('currentWallet', JSON.stringify({
+      address: newAddress,
+      isConnected: accountData.value.isConnected
+    }))
+    accountData.value.status
+    accountStore.setAccount(newAddress)
+  } else {
+    accountStore.disconnect();
+  }
+}, { immediate: true })
+
+</script>
 <style scoped>
 </style>

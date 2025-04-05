@@ -1,7 +1,8 @@
+import type { Vote } from './vote';
+
 export type Proposal = {
     id: string,
     title: string,
-    amount: number,
-    status: string,
-    description: string,
+    state: number,
+    votes: Vote
 };

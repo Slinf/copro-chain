@@ -6,12 +6,13 @@
         <h1 class="text-2xl font-semibold tracking-tight">Proposals</h1>
         <AddProposalForm/>
       </Card>
+      <Skeleton class="h-[100px] w-full rounded-xl border bg-card text-card-foreground shadow mb-3" />
       <Card v-for="proposal in proposalList" class="mb-3">
         <CardHeader>
           <CardTitle>
             {{ proposal.title }}
           </CardTitle>
-          <CardDescription>{{ proposal.description }}</CardDescription>
+          <CardDescription>{{ proposal.state }}</CardDescription>
         </CardHeader>
       </Card>
     </div>
@@ -42,33 +43,43 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Skeleton }from '@/components/ui/skeleton'
 import { AddProposalForm } from '@/components/proposals'
+import { readContract, getAccount } from "@wagmi/core";
+import { governorAbi } from "@/abi/coproGovernor";
+import { config } from "@/config";
+import { useAccountStore } from '@/stores/account';
+
+const governorAddress = import.meta.env.VITE_GOVERNOR_ADDRESS;
+
 
 const proposalList = ref<Proposal[]>([])
 const user = ref<User>();
 
-async function getProposals(): Promise<Proposal[]> {
-  // Fetch data from your API here.
-  return [
-    {
-      id: '728ed52f',
-      title: 'Proposition 1',
-      amount: 100,
-      status: 'pending',
-      description: "Devis porte d'entrée",
-    },
-    {
-      id: '728ed52f',
-      title: 'Proposition 2',
-      amount: 100,
-      status: 'pending',
-      description: 'Faire rénover la cours intérieur',
-    },
-  ]
+const accountStore = useAccountStore();
+
+async function getProposalsFromContract(): Promise<Proposal[]> {
+  debugger
+    if(accountStore.isConnected) {
+    const data = await readContract(config, {
+      abi: governorAbi,
+      address: governorAddress,
+      functionName: 'getAllPropositions',
+      args: [0n, 10n],
+      account: accountStore.getAddressForCall()
+    });
+
+    const formattedProposals = data.map(proposal => ({
+      id: proposal.id.toString(),
+      title: proposal.title,
+      state: proposal.state,
+      votes: proposal.votes
+    }) as Proposal);
+    return formattedProposals;
+  } else return [];
 }
 
 async function getConnectedUser(): Promise<User> {
@@ -83,7 +94,16 @@ async function getConnectedUser(): Promise<User> {
 }
 
 onMounted(async () => {
-  proposalList.value = await getProposals()
+  proposalList.value = [
+    {
+      id: '728ed52f',
+      title: 'Connect with your wallet to see proposals',
+      state: 0,
+      votes: { abstainVotes: BigInt(0), forVotes: BigInt(0), againstVotes:BigInt(0)}
+    },
+  ]
+
+  proposalList.value = await getProposalsFromContract();
   user.value = await getConnectedUser()
 })
 </script>

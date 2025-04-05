@@ -1,6 +1,7 @@
 export type Owner = {
-    id: string,
+    address: string,
+    amount: string,
+    status: string,
     name: string,
     firstname: string,
-    address: string,
 };
