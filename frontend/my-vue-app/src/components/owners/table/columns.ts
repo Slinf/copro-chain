@@ -1,20 +1,19 @@
 import type { ColumnDef } from '@tanstack/vue-table'
 import { h } from 'vue'
-import type { Proposal } from '../../../models/proposal';
 import type { Owner } from '../../../models/owner';
 
 export const columns: ColumnDef<Owner>[] = [
   {
-    accessorKey: 'adress',
-    header: () => h('div', { class: 'text-right' }, 'Address'),
+    accessorKey: 'address',
+    header: () => h('div', { class: 'text-left' }, 'Address'),
     cell: ({ row }) => {
-      const address = Number.parseFloat(row.getValue('address'))
-      return h('div', { class: 'text-right font-medium' }, address)
+      const address = row.getValue('address') as string
+      return h('div', { class: 'text-left font-medium' }, address)
     },
   },
   {
     accessorKey: 'amount',
-    header: () => h('div', { class: 'text-right' }, 'Token Amount'),
+    header: () => h('div', { class: 'text-right' }, 'COPRO Token Amount'),
     cell: ({ row }) => {
       const amount = row.getValue('amount') as string
 

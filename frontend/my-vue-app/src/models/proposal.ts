@@ -6,3 +6,9 @@ export type Proposal = {
     state: number,
     votes: Vote
 };
+
+export type ProposalDetail = {
+    id: string,
+    content: string,
+    description: string
+};

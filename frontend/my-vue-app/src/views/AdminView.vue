@@ -18,11 +18,11 @@
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref,watch} from 'vue';
+import { onMounted, ref, onUnmounted, watch} from 'vue';
 import { config } from "@/config";
-import { readContract, writeContract, getAccount, getPublicClient } from "@wagmi/core";
-
-import { governorAbi } from "@/abi/coproGovernor";
+import { readContract, writeContract, getPublicClient } from "@wagmi/core";
+import { decodeEventLog } from 'viem';
+import type { AbiEvent } from 'abitype'
 import { tokenAbi } from "@/abi/coproToken";
 
 import { useAccountStore } from '@/stores/account';
@@ -32,13 +32,10 @@ import { columns } from "@/components/owners/table/columns";
 import { useToast } from '@/components/ui/toast/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Toaster } from '@/components/ui/toast'
 
-import type { User } from '@/models/user';
 import type { Owner } from "@/models/owner"; 
 
-const governorAddress = import.meta.env.VITE_GOVERNOR_ADDRESS;
 const tokenAddress = import.meta.env.VITE_TOKEN_ADDRESS;
 
 const { toast } = useToast()
@@ -47,34 +44,31 @@ const accountStore = useAccountStore();
 const isMounted = ref<boolean>(false);
 const isAdmin = ref<boolean>(false);
 const ownerList = ref<Owner[]>([])
-const user = ref<User>();
+
 const address = ref<string>('');
 const amount = ref<number>(0);
 
-
 async function getOwnerList(): Promise<Owner[]> {
-  var tokenMinted = await fetchTokenMintedLogs();
-  tokenMinted.reduce((acc: any, log: any) => {
-  const address = log.to; // Changement ici
+  const owners = Array<Owner>();
+  const tokenMinted = await fetchTokenMintedLogs();
+  const groupedByAddress = tokenMinted.map(l => l.args).reduce((acc: [any], log: any) => {
+  const address = log.to;
   if (!acc[address]) {
     acc[address] = 0n;
   }
-  acc[address] += log.value;
+  acc[address] += log.amount;
   return acc;
-}, {});
+ }, {});
 
-  return []
+ return Object.entries(groupedByAddress).map(([address, amount], index) => ({
+      address,                          
+      amount: amount,        
+      status: 'N/A',               
+      name: `Account ${index}`,                     
+      firstname: '',                 
+    } as Owner));
 }
-async function getConnectedUser(): Promise<User> {
-  // Fetch data from your API here.
-  return {
-    address: "",
-    name: "Pierre",
-    firstname: "Bretnn",
-    power: 10,
-    balance: 10,
-  } as User;
-}
+
 
 const isValidEthereumAddress = (address: string): boolean => {
   const ethereumAddressRegex = /^0x[a-fA-F0-9]{40}$/;
@@ -82,7 +76,6 @@ const isValidEthereumAddress = (address: string): boolean => {
 }
 
 async function addNewOwner(): Promise<void> {
-  debugger
     if(!isValidEthereumAddress(address.value)) {
       toast({
         title: 'Error : Wallet adress invalid or malformated',
@@ -100,18 +93,21 @@ async function addNewOwner(): Promise<void> {
     if(accountStore.isConnected && isAdmin.value) {
     const newOwner = address.value as `0x${string}`;
     const amountToBigInt = BigInt(amount.value);
-    const data = await writeContract(config, {
+    await writeContract(config, {
       abi: tokenAbi,
       address: tokenAddress,
       functionName: 'addNewOwner',
       args: [newOwner, amountToBigInt],
       account: accountStore.getAddressForCall()
     })
-    .then(() => {
+    .then(async () => {
+      address.value = '';
+      amount.value = 0;
       toast({
         title: 'Sucess to add new owner',
         variant: 'default'
       });
+      ownerList.value = await getOwnerList()
     })
     .catch(error => {
       console.log(error);
@@ -124,18 +120,25 @@ async function addNewOwner(): Promise<void> {
   };
 }
 
-
-async function checkIsOwner(): Promise<boolean> {
-  if(!accountStore.isConnected) return false;
+async function checkIsOwner(): Promise<void> {
+  if(!accountStore.isConnected) isAdmin.value = false;
   const ownerAddress = await readContract(config, {
     abi: tokenAbi,
     address: tokenAddress,
     functionName: "owner",
   });
-  var userAddress = accountStore.address ?? '';
-  return userAddress.toLowerCase()  === ownerAddress.toLowerCase();
+  const userAddress = accountStore.address ?? '';
+  isAdmin.value = userAddress.toLowerCase()  === ownerAddress.toLowerCase();
 }
 
+const eventAbi = {
+      name:'TokensMinted',
+      type: 'event',
+      inputs: [
+      { type: 'address', name:'to', indexed: true },
+      { type: 'uint256', name:'amount', indexed: false }
+    ]
+} as AbiEvent;
 
  // Récupérer les logs d'événements spécifiques
  async function fetchTokenMintedLogs(): Promise<any> {
@@ -143,23 +146,68 @@ async function checkIsOwner(): Promise<boolean> {
     address: tokenAddress,
     fromBlock: 8056089n,
     toBlock: 'latest',
-    event:{
-      name:'TokensMinted',
-      type: 'event',
-      inputs: [
-      { type: 'address', name:'to', indexed: true },
-      { type: 'uint256', name:'amount', indexed: false }
-      ]
-    }
+    event: eventAbi
   })
 }
 
+function watchNewEvents() {
+  const publicClient = getPublicClient(config);
+
+  const unwatch = publicClient.watchEvent({
+    address: tokenAddress,
+    event: eventAbi,
+    onLogs: (logs) => {
+      logs.forEach((log) => {
+        // Décoder le nouvel événement
+        const decoded = decodeEventLog({
+          abi: [eventAbi],
+          data: log.data,
+          topics: log.topics,
+        });
+
+        const { to, amount } = decoded.args;
+        updateOwnerList(to, amount);
+      });
+    },
+    onError: (error) => {
+      console.error('Erreur lors de l’écoute des événements :', error);
+    },
+  });
+
+  onUnmounted(unwatch);
+}
+
+function updateOwnerList(address: string, value: bigint) {
+  const index = ownerList.value.findIndex((owner) => owner.address === address);
+  if (index !== -1) {
+    const currentAmount = BigInt(ownerList.value[index].amount);
+    ownerList.value[index].amount = (currentAmount + value).toString();
+  } else {
+    ownerList.value.push({
+      address,
+      amount: value.toString(),
+      status: 'unknown',
+      name: '',
+      firstname: '',
+    });
+  }
+}
 
 onMounted(async () => {
-  isAdmin.value = await checkIsOwner();
+  checkIsOwner();
   ownerList.value = await getOwnerList()
-  user.value = await getConnectedUser()
+  watchNewEvents();
   isMounted.value = true;
 })
+
+watch(() => accountStore.isConnected, (isConnected) => {
+    if (isConnected) {
+      // Connexion détectée : charger les données et démarrer l'écoute
+      checkIsOwner();
+      watchNewEvents();
+    }
+    else isAdmin.value = false;
+  }
+);
 
 </script>
