@@ -61,7 +61,7 @@ contract CoproGovernor is
 
     /**
      * @dev Constructor set params of DAO
-     * Dev mode initialVotingDelay = 1 seconds, initialVotingPeriod = 1 minutes
+     * Dev mode initialVotingDelay = 60 seconds, initialVotingPeriod = 1 day
      * Prod mode initialVotingDelay = 1 day, initialVotingPeriod = 1 week
      * @param _token ER20 governance token
      */
@@ -69,7 +69,7 @@ contract CoproGovernor is
         IVotes _token
     )
         Governor("CoproGovernor")
-        GovernorSettings(1 seconds, 1 minutes, 1e18)
+        GovernorSettings(60 seconds, 1 day, 1e18)
         GovernorVotes(_token)
     {}
 
