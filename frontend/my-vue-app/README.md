@@ -1,6 +1,50 @@
-# my-vue-app
+# my-vue-app/coprochain
 
-This template should help get you started developing with Vue 3 in Vite.
+Developed with Vue 3 in Vite.
+
+
+## Context / Contexte 
+
+Framework: Vue.js  & TypeScript
+Librairie de composants : Shadcn for vue 
+Connexion wallet : AppKit de Reown 
+Interactions avec smart contract :
+Viem pour decodeEventLog
+Wagmi pour read & write contract, Network config
+getPublicClient, Create Config, 
+
+L’application est composés de différentes pages: 
+
+Page Gouvernance
+où l’on retrouve la liste des propositions en actives / passées.
+accès aux détails d’une proposition avec possibilité de vote / exécution;
+Page Token:
+présentant les informations concernant le token (répartition / total supply ..etc)
+Page Administration :
+dédiée au gestionnaire de la copro ou personne responsable pour ajouter des participants à la DAO 
+
+-----------------------------------
+
+Framework: Vue.js & TypeScript
+Component library : Shadcn for vue 
+Wallet connection: Reown AppKit 
+Interaction with smart contract :
+Viem for decodeEventLog
+Wagmi for read & write contract, Network config
+getPublicClient, Create Config, 
+
+The application is made up of different pages: 
+
+Governance page
+where you will find the list of active / past proposals.
+Access to the details of a proposal with the option of voting/execution;
+Token page:
+presenting information about the token (distribution / total supply ..etc)
+Administration page :
+dedicated to the copro manager or person responsible for adding participants to the DAO 
+
+Translated with DeepL.com (free version)
+
 
 ## Recommended IDE Setup
 
