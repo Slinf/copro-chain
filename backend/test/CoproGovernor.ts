@@ -4,7 +4,7 @@ import {
 } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
 import { hash } from "crypto";
-import hre from "hardhat";
+import hre, { ethers } from "hardhat";
 
 describe("CoproGovernor", function () {
   // We define a fixture to reuse the same setup in every test.
@@ -13,7 +13,7 @@ describe("CoproGovernor", function () {
   async function deployCoproGovernorFixture() {
 
     // Contracts are deployed using the first signer/account by default
-    const [owner, account1, account2 ] = await hre.ethers.getSigners();
+    const [owner, account1, account2, account3] = await hre.ethers.getSigners();
 
     // Retrieve CoproToken and deploy it 
     const Token = await hre.ethers.getContractFactory("CoproToken");
@@ -23,7 +23,7 @@ describe("CoproGovernor", function () {
     const Governor = await hre.ethers.getContractFactory("CoproGovernor");
     const governorContract = await Governor.deploy(tokenContract.getAddress(), { });
 
-    return { governorContract, tokenContract, owner, account1, account2 };
+    return { governorContract, tokenContract, owner, account1, account2, account3 };
   }
 
   async function deployCoproGovernorAndAddOneOwnerFixture() {
@@ -93,8 +93,8 @@ describe("CoproGovernor", function () {
       //Act + Assert
       //expect(await governorContract.votingDelay()).to.equal(86400); // 1 day = 86400s
       //expect(await governorContract.votingPeriod()).to.equal(604800);// 1 week = 604800s
-      expect(await governorContract.votingDelay()).to.equal(1); 
-      expect(await governorContract.votingPeriod()).to.equal(60);
+      expect(await governorContract.votingDelay()).to.equal(60); 
+      expect(await governorContract.votingPeriod()).to.equal(86400);
     });
     it("Should set the token pass in params as governance token", async function () {
       //Arrange
@@ -108,10 +108,10 @@ describe("CoproGovernor", function () {
     it("Should return the quorum set", async function () {
       //Arrange
       const { governorContract } = await loadFixture(deployCoproGovernorFixture);
-      var block = await hre.ethers.provider.getBlock("latest") ?? { number: 0 };
-
+      const latestBlock = await hre.ethers.provider.getBlock("latest");
+      
       //Act + Assert
-      expect(await governorContract.quorum(block?.number)).to.equal(10e10);
+      expect(await governorContract.quorum(latestBlock?.timestamp - 1)).to.equal(0);
     });
   })
   describe("votingDelay", () => {
@@ -121,7 +121,7 @@ describe("CoproGovernor", function () {
 
       //Act + Assert
       //expect(await governorContract.votingDelay()).to.equal(86400); // 1 day = 86400s
-      expect(await governorContract.votingDelay()).to.equal(1); 
+      expect(await governorContract.votingDelay()).to.equal(60); 
     });
   })
   describe("votingPeriod", () => {
@@ -131,7 +131,7 @@ describe("CoproGovernor", function () {
 
       //Act + Assert
       //expect(await governorContract.votingPeriod()).to.equal(604800);// 1 week = 604800s
-      expect(await governorContract.votingPeriod()).to.equal(60);// 1 week = 604800s
+      expect(await governorContract.votingPeriod()).to.equal(86400);// 1 week = 604800s
     });
   })
   describe("proposalThreshold", () => {
@@ -308,6 +308,25 @@ describe("CoproGovernor", function () {
         expect(formattedProposals[1].title).to.equal("Autre proposition")
         expect(formattedProposals[2].title).to.equal("Ceci est la 3ème proposition")
       });
+      it("Should revert if no voting power", async () => {
+        const { account1, governorContract, account3 } = await loadFixture(deployCoproGovernorFixture);
+        const targets = [account1.address];
+        const values = [10];
+        const calldatas = [hre.ethers.toUtf8Bytes("Proposal test")];
+
+        var res = governorContract.connect(account3).makeProposition(
+          {  
+            title: "Ceci est la 3ème proposition",
+            description: "AHAHAh on avance on avance",
+            content: "YEAH" 
+          },
+          targets,
+          values, 
+          calldatas 
+        );
+
+        await expect(res).to.be.revertedWithCustomError(governorContract, "NoRightToPropose").withArgs(account3);
+      })
     })
   })
   describe("Get Infos", () => {
@@ -319,10 +338,15 @@ describe("CoproGovernor", function () {
         
         expect(res.length).to.equal(0);
       });
-      it("Should revert with OutOfBoundError", async () => {
+      it("Should return only existing proposal if end index does not exist", async () => {
         const { governorContract } = await loadFixture(deployCoproGovernorAndMultipleProposalsFixture);
 
-        await expect(governorContract.getAllPropositions(0,10)).to.be.revertedWithCustomError(governorContract,"OutOfBoundError");
+        var proposals = await governorContract.getAllPropositions(0,10);
+        
+        expect(proposals.length).to.equal(3);
+        expect(proposals[0].title).to.equal("Rénovation de l'entrée");
+        expect(proposals[1].title).to.equal("Autre proposition");
+        expect(proposals[2].title).to.equal("Ceci est la 3ème proposition");
       });
       it("Should revert with InvalidOrderRangeError", async () => {
         const { governorContract } = await loadFixture(deployCoproGovernorAndMultipleProposalsFixture);
@@ -365,7 +389,14 @@ describe("CoproGovernor", function () {
     it("Should success to vote and update score", async () => {
       const { proposal1, account1, governorContract, newProposal, targets, values, calldatas } = await loadFixture(deployCoproGovernorAndMultipleProposalsFixture); 
       var id = "73984644665711994740788300719172920271804219374445738186094308245127487564796";
-      expect(await governorContract.state(id)).to.equal(1);
+      expect(await governorContract.state(id)).to.equal(0); //Pending
+
+      // Avancer le temps de 60 secondes
+      await ethers.provider.send("evm_increaseTime", [120]);
+      // Miner un nouveau bloc pour appliquer le changement de temps
+      await ethers.provider.send("evm_mine");
+
+      expect(await governorContract.state(id)).to.equal(1); //Active
 
       var res = await governorContract.connect(account1).castVote(id, 1);
       await res.wait();
@@ -382,7 +413,14 @@ describe("CoproGovernor", function () {
     it("Should success and score no update if no voting power", async () => {
       const { owner, proposal1, account1, governorContract, newProposal, targets, values, calldatas } = await loadFixture(deployCoproGovernorAndMultipleProposalsFixture); 
       var id = "73984644665711994740788300719172920271804219374445738186094308245127487564796";
-      expect(await governorContract.state(id)).to.equal(1);
+      expect(await governorContract.state(id)).to.equal(0); //Pending
+
+      // Avancer le temps de 60 secondes
+      await ethers.provider.send("evm_increaseTime", [120]);
+      // Miner un nouveau bloc pour appliquer le changement de temps
+      await ethers.provider.send("evm_mine");
+
+      expect(await governorContract.state(id)).to.equal(1); //Active
 
       var res = await governorContract.castVote(id, 1);
       await res.wait();
@@ -397,4 +435,58 @@ describe("CoproGovernor", function () {
       expect(scores[2]).to.equal(0);
     })
   })
+  describe("Quorum", () => {
+    it("Should return 50% of totalSupply", async function () {
+      // Arrange
+      const { governorContract, owner, account1, account2, tokenContract } = await loadFixture(deployCoproGovernorFixture);
+      expect(await tokenContract.totalSupply()).to.equal(hre.ethers.parseUnits("0", 18));
+      await tokenContract.addNewOwner(owner, 25);
+      await tokenContract.addNewOwner(account1, 52);
+      await tokenContract.addNewOwner(account2, 72);
+      
+      await hre.ethers.provider.send("evm_increaseTime", [3600]);
+      await hre.ethers.provider.send("evm_mine", []); 
+      const nowTimestamp = Math.floor(new Date().getTime() / 1000);
+
+      var block = await hre.ethers.provider.getBlock("latest");
+
+      console.log(block);
+      expect(await tokenContract.totalSupply()).to.equal(hre.ethers.parseUnits("149", 18));
+
+      const res = await governorContract.quorum(block?.timestamp - 1);
+
+      expect(res).to.equal(hre.ethers.parseUnits("74.5", 18));
+    });
+  });
+  describe("Resolution And Execution", () => {
+    describe("makeResumeProposal", () => {
+      it("Should revert when called by anyone", async () => {
+        //Arrange
+        const { governorContract, owner } = await loadFixture(deployCoproGovernorFixture);
+        var proposalId = "73984644665711994740788300719172920271804219374445738186094308245127487564796";
+
+        //Act + Assert
+        await expect(governorContract.makeResumeProposal(proposalId)).to.be.revertedWithCustomError(governorContract, "GovernorOnlyExecutor")
+        .withArgs(owner);
+      });
+      it.skip("Should emit event when called", async () => {
+        //Arrange
+        const { governorContract, owner} = await loadFixture(deployCoproGovernorFixture);
+        var proposalId = "73984644665711994740788300719172920271804219374445738186094308245127487564796";
+        const signer = await ethers.getSigner(await governorContract.getAddress());
+        //Act + Assert
+        var res = await governorContract.connect(owner).makeResumeProposal(proposalId);
+
+        //Assert
+
+        await expect(governorContract.makeResumeProposal(proposalId))
+          .to.emit(governorContract, "MakeResumeProposalCalled")
+          .withArgs(proposalId);
+        // await expect(governorContract.connect(owner).makeResumeProposal(proposalId)).not.to.be.revertedWithCustomError(governorContract, "GovernorOnlyExecutor");
+        // expect(res).to
+        // .emit(governorContract, "MakeResumeProposalCalled")
+        // .withArgs(proposalId);
+      });
+    })
+  });
 });

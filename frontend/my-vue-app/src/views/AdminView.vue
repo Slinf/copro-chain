@@ -5,7 +5,7 @@
       <Card class="flex justify-between p-3 mb-3">
         <h1 class="text-2xl font-semibold tracking-tight">List of co-owners</h1>
       </Card>
-      <div class="flex w-full items-center gap-10 mb-5" v-if="isAdmin">
+      <div class="flex w-full items-center gap-10 mb-5" v-if="accountStore.isAdmin">
         <Input id="adress" type="text" placeholder="Wallet Adress" v-model="address"/>
         <Input id="amount" type="number" placeholder="Copro Token Amount" v-model="amount" />
         <Button type="submit" @click="addNewOwner()">
@@ -42,7 +42,6 @@ const { toast } = useToast()
 const accountStore = useAccountStore();
 
 const isMounted = ref<boolean>(false);
-const isAdmin = ref<boolean>(false);
 const ownerList = ref<Owner[]>([])
 
 const address = ref<string>('');
@@ -97,7 +96,7 @@ async function addNewOwner(): Promise<void> {
       })
       return;
     };
-    if(accountStore.isConnected && isAdmin.value) {
+    if(accountStore.isConnected && accountStore.isAdmin) {
     const newOwner = address.value as `0x${string}`;
     const amountToBigInt = BigInt(amount.value);
     await writeContract(config, {
@@ -128,14 +127,21 @@ async function addNewOwner(): Promise<void> {
 }
 
 async function checkIsOwner(): Promise<void> {
-  if(!accountStore.isConnected) isAdmin.value = false;
+  debugger
+  if(!accountStore.isConnected) {
+    accountStore.setIsAdmin(false);
+    return;
+  }
+  if(accountStore.isAdmin) {
+    return;
+  }
   const ownerAddress = await readContract(config, {
     abi: tokenAbi,
     address: tokenAddress,
     functionName: "owner",
   });
   const userAddress = accountStore.address ?? '';
-  isAdmin.value = userAddress.toLowerCase()  === ownerAddress.toLowerCase();
+  accountStore.setIsAdmin(userAddress.toLowerCase()  === ownerAddress.toLowerCase());
 }
 
 const eventAbi = {
@@ -209,11 +215,9 @@ onMounted(async () => {
 
 watch(() => accountStore.isConnected, (isConnected) => {
     if (isConnected) {
-      // Connexion détectée : charger les données et démarrer l'écoute
-      checkIsOwner();
       watchNewEvents();
     }
-    else isAdmin.value = false;
+    checkIsOwner();
   }
 );
 

@@ -53,11 +53,12 @@ contract CoproGovernor is
     Proposal[] proposals;
     mapping(uint256 => ProposalDetail) proposalDetailsById;
 
-    error OutOfBoundError();
     error InvalidOrderRangeError();
     error InvalidRangeError();
+    error NoRightToPropose(address caller);
 
     event ProposalAddedInGovernor(address by, Proposal proposal);
+    event MakeResumeProposalCalled(uint256 proposalId);
 
     /**
      * @dev Constructor set params of DAO
@@ -69,15 +70,21 @@ contract CoproGovernor is
         IVotes _token
     )
         Governor("CoproGovernor")
-        GovernorSettings(60 seconds, 1 day, 1e18)
+        GovernorSettings(60 seconds, 1 days, 1e18)
         GovernorVotes(_token)
     {}
 
-    function quorum(
-        uint256 blockNumber
-    ) public pure override returns (uint256) {
-        //Customiser cela
-        return 10e10;
+    /**
+     * @dev Custom quorum to definition, we need 50% of participation for all proposal
+     * In the future a type of proposal would modify this value
+     * @param timestamp tilestamp for checkpoint, not block number cause qe are in timestamp mode
+     */
+    function quorum(uint256 timestamp) public view override returns (uint256) {
+        uint256 totalSupply = IVotes(token()).getPastTotalSupply(timestamp);
+        if (totalSupply == 0) {
+            return 0;
+        }
+        return (totalSupply + 1) / 2;
     }
 
     // The following functions are overrides required by Solidity.
@@ -131,14 +138,14 @@ contract CoproGovernor is
         if (proposals.length == 0) {
             return new ProposalResult[](0);
         }
-        if (endIndex > proposals.length - 1) {
-            revert OutOfBoundError();
-        }
         if (startIndex > endIndex) {
             revert InvalidOrderRangeError();
         }
         if (endIndex - startIndex > 20) {
             revert InvalidRangeError();
+        }
+        if (endIndex > proposals.length - 1) {
+            endIndex = proposals.length - 1;
         }
         uint resultSize = endIndex - startIndex + 1;
         ProposalResult[] memory selectedProposals = new ProposalResult[](
@@ -175,13 +182,13 @@ contract CoproGovernor is
     }
 
     /**
-     * @dev Generate ipfs file of the proposal, default methods used on proposal execution
+     * @dev default methods used on proposal execution
+     * In the future can generate ipfs file of the proposal
+     * @param id proposalId
      */
-    function makeResumeProposal()
-        external
-        view
-        returns (ProposalDetail[] memory)
-    {}
+    function makeResumeProposal(uint256 id) external onlyGovernance {
+        emit MakeResumeProposalCalled(id);
+    }
 
     /**
      * @dev Allow to make new proposition with targets, values or caldata as a standard DAO proposition
@@ -197,6 +204,10 @@ contract CoproGovernor is
         uint256[] calldata values,
         bytes[] calldata calldatas
     ) public returns (uint256) {
+        uint256 proposerVotes = getVotes(msg.sender, clock() - 1);
+        if (proposerVotes == 0) {
+            revert NoRightToPropose(msg.sender);
+        }
         uint256 idNewProposal = propose(
             targets,
             values,

@@ -119,7 +119,7 @@ const getProposalsFromContract = async (): Promise<Proposal[]> => {
     abi: governorAbi,
     address: governorAddress,
     functionName: 'getAllPropositions',
-    args: [0n, 0n],
+    args: [0n, 10n],
     account: accountStore.getAddressForCall()
   });
   const formattedProposals = data.map(proposal => ({

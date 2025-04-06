@@ -14,7 +14,7 @@
 
         <CardContent class="space-y-6">
             <div>
-            <h4 class="text-lg font-semibold">Contenu</h4>
+            <h4 class="text-lg font-semibold">Content</h4>
             <p class="text-sm text-gray-700">{{ currentProposalDetails?.content }}</p>
             </div>
 
@@ -23,18 +23,26 @@
             <div>
             <h4 class="text-lg font-semibold mb-2">Votes</h4>
             <div class="grid grid-cols-3 gap-4">
-                <Badge variant="secondary">Pour : {{ currentProposal?.votes.forVotes }}</Badge>
-                <Badge variant="destructive">Contre : {{ currentProposal?.votes.abstainVotes }}</Badge>
+                <Badge variant="secondary">For : {{ currentProposal?.votes.forVotes }}</Badge>
+                <Badge variant="destructive">Against : {{ currentProposal?.votes.abstainVotes }}</Badge>
                 <Badge variant="outline">Abstention : {{ currentProposal?.votes.abstainVotes }}</Badge>
             </div>
             </div>
 
             <Separator />
 
-            <div class="flex justify-end gap-4">
-            <Button variant="destructive" @click="vote(0)">Contre</Button>
-            <Button variant="outline" @click="vote(3)">Abstention</Button>
-            <Button @click="vote(1)">Pour</Button>
+            <div v-if="currentProposal.state === ProposalState.Active && !isVotePending" class="flex justify-end gap-4">
+            <Button variant="destructive" @click="vote(0)" :disabled="isVotePending">Contre</Button>
+            <Button variant="outline" @click="vote(3)" :disabled="isVotePending">Abstain</Button>
+            <Button @click="vote(1)" :disabled="isVotePending">Pour</Button>
+            </div>
+            <div class="flex justify-between gap-4" v-else>
+              <p>Proposal is {{ getDisplayProposalStateValue(currentProposal.state) }}</p>
+              <p v-if="currentProposal.state !== ProposalState.Active">Vote not available</p>
+              <Button disabled v-if="isVotePending">
+              <Loader2 class="w-4 h-4 mr-2 animate-spin" />
+                Please wait for voting transaction
+            </Button>
             </div>
         </CardContent>
         </Card>
@@ -57,6 +65,9 @@ import { readContract, writeContract } from "@wagmi/core";
 import router from '@/router';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { Toaster } from '@/components/ui/toast'
+import { Loader2 } from 'lucide-vue-next'
+import { ProposalState, getDisplayProposalStateValue} from '@/models/enum';
+
 
 const governorAddress = import.meta.env.VITE_GOVERNOR_ADDRESS;
 
@@ -68,6 +79,8 @@ const route = useRoute()
 const proposalId = route.params.id as string
 const currentProposal = ref<Proposal>();
 const currentProposalDetails = ref<ProposalDetail>();
+
+const isVotePending = ref<boolean>(false);
 
 currentProposal.value = proposalStore.getProposalById(proposalId);
 
@@ -90,6 +103,7 @@ const getDetailProposalFromContract = async (): Promise<void> => {
 
 const vote = async (choice: number) => {
   if(!accountStore.isConnected) return;
+  isVotePending.value = true;
 
   await writeContract(config, {
       abi: governorAbi,
@@ -103,6 +117,7 @@ const vote = async (choice: number) => {
         title: 'Your vote has been submitted successfully',
         variant: 'default'
       });
+      isVotePending.value = false;
     })
     .catch(error => {
       console.log(error);
@@ -111,6 +126,7 @@ const vote = async (choice: number) => {
         description: error,
         variant: 'destructive'
       });
+      isVotePending.value = false;
     });
 }
 

@@ -14,7 +14,7 @@ export function getDisplayProposalStateValue(state :number): string {
         case ProposalState.Pending:
             return "Pending"
         case ProposalState.Active:
-            return "Pending"
+            return "Active"
         case ProposalState.Canceled:
             return "Canceled"
         case ProposalState.Defeated:
