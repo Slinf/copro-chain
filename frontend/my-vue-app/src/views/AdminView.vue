@@ -171,8 +171,8 @@ function watchNewEvents() {
           abi: [eventAbi],
           data: log.data,
           topics: log.topics,
-        });
-
+        }) as { eventName: string; args: { to: string; amount: bigint; }
+      };
         const { to, amount } = decoded.args;
         updateOwnerList(to, amount);
       });
