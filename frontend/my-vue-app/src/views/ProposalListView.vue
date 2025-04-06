@@ -39,7 +39,24 @@
         </Card>
     </RouterLink>
     </div>
-    <div class="container">
+    <div class="container" v-if="!accountStore.isConnected">
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Infos :</CardTitle>
+          <CardDescription>
+            <p>NOT CONNECTED</p>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Skeleton/>
+            <div class="flex justify-between p-3 mb-3">
+              <label>Voting power: --</label>
+              <label>Balance : -- COPRO</label>
+            </div>
+        </CardContent>
+      </Card>
+    </div>
+    <div class="container" v-else>
       <Card>
         <CardHeader>
           <CardTitle>Your Infos</CardTitle>
@@ -84,6 +101,7 @@ import { getDisplayProposalStateValue } from '@/models/enum'
 import type { ProposalEvent } from '@/events/proposalEvent'
 import { tokenAbi } from "@/abi/coproToken";
 import { formatUnits } from 'viem';
+import Skeleton from "@/components/ui/skeleton/Skeleton.vue";
 
 const governorAddress = import.meta.env.VITE_GOVERNOR_ADDRESS;
 const tokenAddress = import.meta.env.VITE_TOKEN_ADDRESS;
