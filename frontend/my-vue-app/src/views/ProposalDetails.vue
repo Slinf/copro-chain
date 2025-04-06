@@ -1,9 +1,14 @@
 <template>
     <Toaster />
     <div class="max-w-3xl mx-auto mt-10 p-6">
+      <div class="flex justify-between">
         <Button variant="outline" class="mb-4" @click="goBack">
         ← Go Back
         </Button>
+        <Button variant='secondary' class="mb-4" @click="executeProposal()">
+          Execute Proposal
+        </Button>
+      </div>
         <Card v-if="currentProposal && currentProposalDetails">
         <CardHeader>
             <CardTitle class="text-2xl">{{ currentProposal?.title }}</CardTitle>
@@ -23,22 +28,23 @@
             <div>
             <h4 class="text-lg font-semibold mb-2">Votes</h4>
             <div class="grid grid-cols-3 gap-4">
-                <Badge variant="secondary">For : {{ currentProposal?.votes.forVotes }}</Badge>
-                <Badge variant="destructive">Against : {{ currentProposal?.votes.abstainVotes }}</Badge>
-                <Badge variant="outline">Abstention : {{ currentProposal?.votes.abstainVotes }}</Badge>
+                <Badge variant="default" class="bg-green-100 text-green-800 border-green-300">For : {{ formatUnits(currentProposal?.votes.forVotes, decimals)  }}</Badge>
+                <Badge variant="outline">Abstention : {{ formatUnits(currentProposal?.votes.abstainVotes, decimals) }}</Badge>
+                <Badge variant="destructive">Against : {{ formatUnits(currentProposal?.votes.againstVotes, decimals) }}</Badge>
             </div>
             </div>
 
             <Separator />
 
-            <div v-if="currentProposal.state === ProposalState.Active && !isVotePending" class="flex justify-end gap-4">
-            <Button variant="destructive" @click="vote(0)" :disabled="isVotePending">Contre</Button>
-            <Button variant="outline" @click="vote(3)" :disabled="isVotePending">Abstain</Button>
-            <Button @click="vote(1)" :disabled="isVotePending">Pour</Button>
+            <div v-if="currentProposal.state === ProposalState.Active && !isVotePending && !userHasVoted" class="flex justify-end gap-4">
+            <Button variant="outline" @click="vote(VoteType.For)" :disabled="isVotePending">Yes, I vote for</Button>
+            <Button variant="outline" @click="vote(VoteType.Abstain)" :disabled="isVotePending">I abstain</Button>
+            <Button variant="outline" @click="vote(VoteType.Against)" :disabled="isVotePending">No, I vote against</Button>
             </div>
             <div class="flex justify-between gap-4" v-else>
               <p>Proposal is {{ getDisplayProposalStateValue(currentProposal.state) }}</p>
               <p v-if="currentProposal.state !== ProposalState.Active">Vote not available</p>
+              <p v-if="userHasVoted">You already vote for this !</p>
               <Button disabled v-if="isVotePending">
               <Loader2 class="w-4 h-4 mr-2 animate-spin" />
                 Please wait for voting transaction
@@ -66,9 +72,10 @@ import router from '@/router';
 import { useToast } from '@/components/ui/toast/use-toast';
 import { Toaster } from '@/components/ui/toast'
 import { Loader2 } from 'lucide-vue-next'
-import { ProposalState, getDisplayProposalStateValue} from '@/models/enum';
+import { VoteType, ProposalState, getDisplayProposalStateValue} from '@/models/enum';
+import { formatUnits } from 'viem';
 
-
+const decimals = 18;
 const governorAddress = import.meta.env.VITE_GOVERNOR_ADDRESS;
 
 const accountStore = useAccountStore();
@@ -81,6 +88,8 @@ const currentProposal = ref<Proposal>();
 const currentProposalDetails = ref<ProposalDetail>();
 
 const isVotePending = ref<boolean>(false);
+const isExecutionPending = ref<boolean>(false);
+const userHasVoted = ref<boolean>(false);
 
 currentProposal.value = proposalStore.getProposalById(proposalId);
 
@@ -101,7 +110,21 @@ const getDetailProposalFromContract = async (): Promise<void> => {
   proposalStore.setDetails(proposalId, formattedDetails);
 }
 
-const vote = async (choice: number) => {
+const userAlreadyVote = async (): Promise<void> => {
+  if(!accountStore.isConnected) return;
+
+  const data = await readContract(config, {
+    abi: governorAbi,
+    address: governorAddress,
+    functionName: 'hasVoted',
+    args: [BigInt(proposalId), accountStore.address as `0x${string}`],
+    account: accountStore.getAddressForCall()
+  }).then(hasVoted => {
+    userHasVoted.value= hasVoted;
+  });
+}
+
+const vote = async (choice: number): Promise<void> => {
   if(!accountStore.isConnected) return;
   isVotePending.value = true;
 
@@ -130,9 +153,39 @@ const vote = async (choice: number) => {
     });
 }
 
+const executeProposal = async (): Promise<void> => {
+  if(!accountStore.isConnected) return;
+  isExecutionPending.value = true;
+
+  await writeContract(config, {
+      abi: governorAbi,
+      address: governorAddress,
+      functionName: 'execute',
+      args: [],
+      account: accountStore.getAddressForCall()
+    })
+    .then(async () => {
+      toast({
+        title: 'Execution submitted successfully',
+        variant: 'default'
+      });
+      isExecutionPending.value = false;
+    })
+    .catch(error => {
+      console.log(error);
+      toast({
+        title: 'Error -',
+        description: error,
+        variant: 'destructive'
+      });
+      isExecutionPending.value = false;
+    });
+}
+
 const goBack = () => router.back()
 
 onMounted(async () => {
   await getDetailProposalFromContract()
+  await userAlreadyVote();
 })
 </script>

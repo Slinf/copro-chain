@@ -22,11 +22,11 @@
               <span class="text-lg font-semibold">{{ proposal.title }}</span>
               <div class="grid grid-cols-2 gap-x-2 text-sm text-muted-foreground ml-4">
                 <span class="text-right">For:</span>
-                <span class="text-left font-medium text-green-600">{{ proposal.votes.forVotes }}</span>
+                <span class="text-left font-medium text-green-600">{{ formatUnits(proposal.votes.forVotes, decimals) }}</span>
                 <span class="text-right">Against:</span>
-                <span class="text-left font-medium text-red-600">{{ proposal.votes.againstVotes }}</span>
+                <span class="text-left font-medium text-red-600">{{ formatUnits(proposal.votes.againstVotes, decimals) }}</span>
                 <span class="text-right">Abstain:</span>
-                <span class="text-left font-medium text-gray-500">{{ proposal.votes.abstainVotes }}</span>
+                <span class="text-left font-medium text-gray-500">{{ formatUnits(proposal.votes.abstainVotes, decimals) }}</span>
               </div>
             </div>
             </CardTitle>
@@ -80,7 +80,7 @@ import { readContract, writeContract } from "@wagmi/core";
 
 import type { Proposal } from "@/models/proposal";
 import type { User } from "@/models/user";
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import {
   Card,
   CardContent,
@@ -100,18 +100,24 @@ import { Button } from '@/components/ui/button';
 import { getDisplayProposalStateValue } from '@/models/enum'
 import type { ProposalEvent } from '@/events/proposalEvent'
 import { tokenAbi } from "@/abi/coproToken";
-import { formatUnits } from 'viem';
+import { formatUnits, keccak256, toBytes } from 'viem';
 import Skeleton from "@/components/ui/skeleton/Skeleton.vue";
 
 const governorAddress = import.meta.env.VITE_GOVERNOR_ADDRESS;
 const tokenAddress = import.meta.env.VITE_TOKEN_ADDRESS;
 
+const decimals = 18;
 const { toast } = useToast()
 const proposalList = ref<Proposal[]>([])
 const user = ref<User>();
 
 const accountStore = useAccountStore();
 const proposalStore = useProposalStore();
+
+
+const initProposals = async () => {
+  proposalList.value = await getProposalsFromContract();
+}
 
 const getProposalsFromContract = async (): Promise<Proposal[]> => {
   if(!accountStore.isConnected) return [];
@@ -133,16 +139,42 @@ const getProposalsFromContract = async (): Promise<Proposal[]> => {
   return formattedProposals;
 }
 
+const getMakeResumeProposalCalldata = (proposalId: bigint) => {
+  return encodeFunctionData({
+    abi: governorAbi,
+    functionName: 'makeResumeProposal',
+    args: [proposalId],
+  });
+}
+
+
+// const getIdProposalFromData = async (proposalValues: ProposalEvent):Promise<bigint> =>{
+//   const descriptionHash = keccak256(toBytes(proposalValues.description));
+//   const targets =  [governorAddress];
+//   const values = [0n];
+//   const hashProposal = await readContract(config, {
+//     abi: governorAbi,
+//     address: governorAddress,
+//     functionName: 'hashProposal',
+//     args: [targets,values, [defautlCallData], descriptionHash]
+//   });
+
+//   return hashProposal;
+// }
+
+
 const submitNewProposal = async (values: ProposalEvent): Promise<void>  => { 
   if(!accountStore.isConnected) return;
   if(values.content.length == 0 && values.title.length == 0) return;
+  
+  //var proposalId = getIdProposalFromData(values);
 
-    // Encode l'appel de `makeResumeProposal` pour l'inclure dans `calldatas`
-    const calldata = encodeFunctionData({
-      abi: governorAbi,
-      functionName: 'makeResumeProposal',
-      args:[]
-    })
+  // Encode l'appel de `makeResumeProposal` pour l'inclure dans `calldatas`
+  const calldata = encodeFunctionData({
+    abi: governorAbi,
+    functionName: 'makeResumeProposal',
+    args:[]
+  })
 
   await writeContract(config, {
       abi: governorAbi,
@@ -198,8 +230,16 @@ const getInfosConnectedUser = async (): Promise<void>  => {
 }
 
 onMounted(async () => {
-  proposalList.value = await getProposalsFromContract();
+  await initProposals();
   await getInfosConnectedUser()
 })
+
+watch(() => accountStore.address, (newAddress: string | null) => {
+  if (newAddress) {
+    getInfosConnectedUser()
+    initProposals();
+  }
+}, { immediate: true })
+
 </script>
 

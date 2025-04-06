@@ -16,7 +16,6 @@ export const columns: ColumnDef<Owner>[] = [
     header: () => h('div', { class: 'text-right' }, 'COPRO Token Amount'),
     cell: ({ row }) => {
       const amount = row.getValue('amount') as string
-
       return h('div', { class: 'text-right font-medium' }, amount)
     },
   },

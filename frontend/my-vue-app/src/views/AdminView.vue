@@ -127,7 +127,6 @@ async function addNewOwner(): Promise<void> {
 }
 
 async function checkIsOwner(): Promise<void> {
-  debugger
   if(!accountStore.isConnected) {
     accountStore.setIsAdmin(false);
     return;
@@ -194,11 +193,11 @@ function updateOwnerList(address: string, value: bigint) {
   const index = ownerList.value.findIndex((owner) => owner.address === address);
   if (index !== -1) {
     const currentAmount = BigInt(ownerList.value[index].amount);
-    ownerList.value[index].amount = (currentAmount + value).toString();
+    ownerList.value[index].amount = (currentAmount + value);
   } else {
     ownerList.value.push({
       address,
-      amount: value.toString(),
+      amount: value,
       status: 'unknown',
       name: '',
       firstname: '',

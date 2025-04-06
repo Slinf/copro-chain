@@ -9,6 +9,12 @@ export enum ProposalState {
     Executed
 }
 
+export enum VoteType {
+    Against, // 0
+    For,     // 1
+    Abstain  // 2
+}
+
 export function getDisplayProposalStateValue(state :number): string {
     switch (state) {
         case ProposalState.Pending:
