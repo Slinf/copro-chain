@@ -32,7 +32,7 @@
       </Card>
     </div>
     <div class="flex justify-center">
-      <Button @click="openInNewTab()" variant="solid" color="orange" class="px-6 py-3 text-base font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-all duration-300 shadow-lg hover:shadow-orange-600/30">
+      <Button @click="openInNewTab()" variant="default" color="orange" class="px-6 py-3 text-base font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-all duration-300 shadow-lg hover:shadow-orange-600/30">
               Learn More About Governance
               <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -42,7 +42,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const openInNewTab = () => {
   window.open('https://ethereum.org/en/dao/', '_blank') // Ouvre dans un nouvel onglet
 }

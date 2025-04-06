@@ -71,7 +71,7 @@ import { RouterLink } from 'vue-router'
 // Simulated token data – replace with actual data from your smart contract
 const token = {
   name: 'Copro Governance Token',
-  symbol: 'CGT',
+  symbol: 'COPRO',
   totalSupply: '1000000',
   holders: [
     { address: '0x123...abc', balance: '250000' },

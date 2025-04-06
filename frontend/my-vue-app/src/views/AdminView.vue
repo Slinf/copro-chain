@@ -21,7 +21,7 @@
 import { onMounted, ref, onUnmounted, watch} from 'vue';
 import { config } from "@/config";
 import { readContract, writeContract, getPublicClient } from "@wagmi/core";
-import { decodeEventLog } from 'viem';
+import { decodeEventLog, type Log } from 'viem';
 import type { AbiEvent } from 'abitype'
 import { tokenAbi } from "@/abi/coproToken";
 
@@ -48,10 +48,18 @@ const ownerList = ref<Owner[]>([])
 const address = ref<string>('');
 const amount = ref<number>(0);
 
+
+type CustomMintLog = Log<bigint, number, false> & {
+  args: {
+    to: string;
+    amount: bigint;
+  };
+};
+
 async function getOwnerList(): Promise<Owner[]> {
   const owners = Array<Owner>();
   const tokenMinted = await fetchTokenMintedLogs();
-  const groupedByAddress = tokenMinted.map(l => l.args).reduce((acc: [any], log: any) => {
+  const groupedByAddress = tokenMinted.map((l:CustomMintLog) => l.args).reduce((acc: Record<string, bigint>, log: { to: string; amount: bigint }) => {
   const address = log.to;
   if (!acc[address]) {
     acc[address] = 0n;
