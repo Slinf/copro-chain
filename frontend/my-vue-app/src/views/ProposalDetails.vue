@@ -5,7 +5,7 @@
         <Button variant="outline" class="mb-4" @click="goBack">
         ← Go Back
         </Button>
-        <Button variant='secondary' class="mb-4" @click="() => {}">
+        <Button  v-if="accountStore.hasVotingPower || accountStore.isCoproHolder" variant='secondary' class="mb-4" @click="() => {}">
           Execute Proposal
         </Button>
       </div>
@@ -36,7 +36,7 @@
 
             <Separator />
 
-            <div v-if="currentProposal.state === ProposalState.Active && !isVotePending && !userHasVoted" class="flex justify-between">
+            <div v-if="currentProposal.state === ProposalState.Active && !isVotePending && !userHasVoted && accountStore.hasVotingPower" class="flex justify-between">
             <Button variant="outline" class="bg-zinc-300 text-grey-800 border-grey-300" @click="vote(VoteType.For)" :disabled="isVotePending">Yes, I vote for</Button>
             <Button variant="outline" class="bg-zinc-300 text-grey-800 border-grey-300" @click="vote(VoteType.Abstain)" :disabled="isVotePending">I abstain</Button>
             <Button variant="outline" class="bg-zinc-300 text-grey-800 border-grey-300" @click="vote(VoteType.Against)" :disabled="isVotePending">No, I vote against</Button>
@@ -111,6 +111,7 @@ const getDetailProposalFromContract = async (): Promise<void> => {
 
 const userAlreadyVote = async (): Promise<void> => {
   if(!accountStore.isConnected) return;
+  debugger;
 
   const data = await readContract(config, {
     abi: governorAbi,

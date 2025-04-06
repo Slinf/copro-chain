@@ -5,6 +5,8 @@ export const useAccountStore = defineStore('account', () => {
   const address = ref<string | null>(null)
   const isConnected = ref(false)
   const isAdmin = ref(false)
+  const hasVotingPower = ref(false);
+  const isCoproHolder = ref(false);
 
   function setAccount(newAddress: string) {
     address.value = newAddress
@@ -12,12 +14,23 @@ export const useAccountStore = defineStore('account', () => {
   }
 
   function disconnect() {
-    address.value = null
-    isConnected.value = false
+    address.value = null;
+    isConnected.value = false;
+    hasVotingPower.value = false;
+    isCoproHolder.value = false;
+    isAdmin.value = false;
   }
 
   function setIsAdmin(value: boolean) {
     isAdmin.value = value
+  }
+
+  function setVotingPower(value: boolean) {
+    hasVotingPower.value = value
+  }
+
+  function setCoproHolder(value: boolean) {
+    isCoproHolder.value = value
   }
 
   const getAddressForCall = () => {
@@ -28,5 +41,5 @@ export const useAccountStore = defineStore('account', () => {
     return address.value as `0x${string}`;
   }
 
-  return { address, isConnected, isAdmin, setIsAdmin, setAccount, disconnect, getAddressForCall }
+  return { address, isConnected, isAdmin,isCoproHolder, hasVotingPower, setIsAdmin, setAccount, disconnect, getAddressForCall, setVotingPower, setCoproHolder }
 })

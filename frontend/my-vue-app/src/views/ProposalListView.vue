@@ -5,7 +5,7 @@
       <!-- <DataTable :columns="columns" :data="data" /> -->
       <Card class="flex justify-between p-3 mb-3">
         <h1 class="text-2xl font-semibold tracking-tight">Proposals</h1>
-        <AddProposalForm v-if="accountStore.isConnected" @submitProposal="submitNewProposalWithResume"/>
+        <AddProposalForm v-if="accountStore.isConnected && accountStore.isCoproHolder" @submitProposal="submitNewProposalWithResume"/>
       </Card>
       <Card class="mb-3" v-if="!accountStore.isConnected">
         <CardHeader>
@@ -129,6 +129,7 @@ const getProposalsFromContract = async (): Promise<Proposal[]> => {
     address: governorAddress,
     functionName: 'getAllPropositions',
     args: [BigInt(startIndex.value), BigInt(endIndex.value)],
+    account: accountStore.getAddressForCall()
   });
   const formattedProposals = data.map(proposal => ({
     id: proposal.id.toString(),
@@ -266,7 +267,9 @@ const getInfosConnectedUser = async (): Promise<void>  => {
     balance: formatUnits(balance, 18),
     address: accountStore.address,
   }
-
+  
+  accountStore.setCoproHolder(balance > 0n);
+  accountStore.setVotingPower(votePower > 0n);
 }
 
 onMounted(async () => {
