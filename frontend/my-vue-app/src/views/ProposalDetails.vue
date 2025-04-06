@@ -117,6 +117,6 @@ const vote = async (choice: number) => {
 const goBack = () => router.back()
 
 onMounted(async () => {
-    getDetailProposalFromContract()
+  await getDetailProposalFromContract()
 })
 </script>

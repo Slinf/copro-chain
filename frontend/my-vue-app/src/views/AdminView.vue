@@ -57,7 +57,6 @@ type CustomMintLog = Log<bigint, number, false> & {
 };
 
 async function getOwnerList(): Promise<Owner[]> {
-  const owners = Array<Owner>();
   const tokenMinted = await fetchTokenMintedLogs();
   const groupedByAddress = tokenMinted.map((l:CustomMintLog) => l.args).reduce((acc: Record<string, bigint>, log: { to: string; amount: bigint }) => {
   const address = log.to;
@@ -202,7 +201,7 @@ function updateOwnerList(address: string, value: bigint) {
 }
 
 onMounted(async () => {
-  checkIsOwner();
+  await checkIsOwner();
   ownerList.value = await getOwnerList()
   watchNewEvents();
   isMounted.value = true;

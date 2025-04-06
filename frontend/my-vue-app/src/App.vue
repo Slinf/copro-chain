@@ -66,11 +66,9 @@ import { Mail, GithubIcon } from 'lucide-vue-next';
 import { createAppKit } from '@reown/appkit/vue'
 import { sepolia, mainnet, polygon, type AppKitNetwork } from '@reown/appkit/networks'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
-import { readContract, getAccount } from "@wagmi/core";
-import { config } from "@/config";
-import { watchEffect, ref, onMounted, watch} from 'vue';
+import { watch} from 'vue';
 import { useAccountStore } from '@/stores/account';
-import { useAppKit, useAppKitAccount } from '@reown/appkit/vue'
+import { useAppKitAccount } from '@reown/appkit/vue'
 
 // 1. Get projectId from https://cloud.reown.com
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID

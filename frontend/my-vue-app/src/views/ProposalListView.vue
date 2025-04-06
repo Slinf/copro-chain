@@ -80,7 +80,7 @@ import { readContract, writeContract } from "@wagmi/core";
 
 import type { Proposal } from "@/models/proposal";
 import type { User } from "@/models/user";
-import { computed, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import {
   Card,
   CardContent,
@@ -133,7 +133,7 @@ const getProposalsFromContract = async (): Promise<Proposal[]> => {
   return formattedProposals;
 }
 
-const submitNewProposal = async (values: ProposalEvent) => { 
+const submitNewProposal = async (values: ProposalEvent): Promise<void>  => { 
   if(!accountStore.isConnected) return;
   if(values.content.length == 0 && values.title.length == 0) return;
 
@@ -167,7 +167,7 @@ const submitNewProposal = async (values: ProposalEvent) => {
     });
 }
 
-const getInfosConnectedUser = async () => {
+const getInfosConnectedUser = async (): Promise<void>  => {
   if(!accountStore.isConnected || !accountStore.address) return;
   const nowTimestamp = BigInt(Math.floor(new Date().getTime() / 1000) - 100);
   const addressCurrentAccount = accountStore.address as `0x${string}`;
@@ -199,7 +199,7 @@ const getInfosConnectedUser = async () => {
 
 onMounted(async () => {
   proposalList.value = await getProposalsFromContract();
-  getInfosConnectedUser()
+  await getInfosConnectedUser()
 })
 </script>
 
