@@ -1,13 +1,46 @@
-# Sample Hardhat Project
+# Copro-Chain - Backend 
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
+## Description
 
-Try running some of the following tasks:
+Copro-Chain est une solution décentralisée basée sur la blockchain pour gérer les actifs des copropriétés.
+Elle utilise Ethereum et des smart contracts pour assurer transparence et sécurité.
 
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.ts
+
+## Fonctionnalités
+
+- Ajout de participant par owner (mint + delegate)
+- Ajout de proposition
+- Vote pour/contre les propositions
+- Execution propositions
+
+## Prérequis
+
+- 22.9.0 or 20.13.1
+- npm ou Yarn
+- MetaMask pour les interactions blockchain
+- Open Zeppelin
+
+## Installation
+
+1. Clonez le dépôt :
+
+   ```bash
+   git clone https://github.com/Slinf/copro-chain.git
+    ```
+2. Installez les dépendances :
+
+   ```bash
+   npm install
+    ```
+3. Configurez les variables d’environnement dans .env.
+
+
+4. Lancez node with :
+ ```bash
+ npx hardhat node 
+ ```
+
+5. Deploy contracts 
+```bash
+npx hardhat run .\scripts\deployGovernor.ts --network networkname
 ```
