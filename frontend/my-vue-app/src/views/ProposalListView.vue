@@ -150,21 +150,6 @@ const getMakeResumeProposalCalldata = (proposalId: bigint) => {
 }
 
 
-const getIdProposalFromData = async (proposalValues: ProposalEvent):Promise<bigint> =>{
-  const descriptionHash = keccak256(toBytes(proposalValues.description));
-  const targets =  [governorAddress];
-  const values = [0n];
-  const hashProposal = await readContract(config, {
-    abi: governorAbi,
-    address: governorAddress,
-    functionName: 'hashProposal',
-    args: [targets,values, [defautlCallData], descriptionHash]
-  });
-
-  return hashProposal;
-}
-
-
 const submitNewProposalWithResume = async (proposalEvent: ProposalEvent): Promise<void>  => { 
   debugger
   let dummyId = 0n; // temporaire pour calcul

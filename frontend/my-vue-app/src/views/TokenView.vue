@@ -75,7 +75,7 @@ import { formatUnits, type AbiEvent, type Log } from 'viem';
 
 const tokenAddress = import.meta.env.VITE_TOKEN_ADDRESS;
 const decimals = 18;
-const totalSupply = ref<BigInt>(0n);
+const totalSupply = ref<bigint>(0n);
 const symbol = ref<string>('');
 const name = ref<string>('');
 const holders = ref<{address:string, balance:string}[]>([]);

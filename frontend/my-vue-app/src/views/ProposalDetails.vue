@@ -88,7 +88,6 @@ const currentProposal = ref<Proposal>();
 const currentProposalDetails = ref<ProposalDetail>();
 
 const isVotePending = ref<boolean>(false);
-const isExecutionPending = ref<boolean>(false);
 const userHasVoted = ref<boolean>(false);
 
 currentProposal.value = proposalStore.getProposalById(proposalId);
@@ -153,34 +152,54 @@ const vote = async (choice: number): Promise<void> => {
     });
 }
 
-const executeProposal = async (): Promise<void> => {
-  if(!accountStore.isConnected) return;
-  isExecutionPending.value = true;
+///
+//
+// TODO NEXT
+//
+// const executeProposal = async (): Promise<void> => {
+//   if(!accountStore.isConnected) return;
+//   isExecutionPending.value = true;
 
-  await writeContract(config, {
-      abi: governorAbi,
-      address: governorAddress,
-      functionName: 'execute',
-      args: [],
-      account: accountStore.getAddressForCall()
-    })
-    .then(async () => {
-      toast({
-        title: 'Execution submitted successfully',
-        variant: 'default'
-      });
-      isExecutionPending.value = false;
-    })
-    .catch(error => {
-      console.log(error);
-      toast({
-        title: 'Error -',
-        description: error,
-        variant: 'destructive'
-      });
-      isExecutionPending.value = false;
-    });
-}
+//   await writeContract(config, {
+//       abi: governorAbi,
+//       address: governorAddress,
+//       functionName: 'execute',
+//       args: [],
+//       account: accountStore.getAddressForCall()
+//     })
+//     .then(async () => {
+//       toast({
+//         title: 'Execution submitted successfully',
+//         variant: 'default'
+//       });
+//       isExecutionPending.value = false;
+//     })
+//     .catch(error => {
+//       console.log(error);
+//       toast({
+//         title: 'Error -',
+//         description: error,
+//         variant: 'destructive'
+//       });
+//       isExecutionPending.value = false;
+//     });
+// }
+
+///Compute ID of proposal
+// const getIdProposalFromData = async (proposalValues: ProposalEvent):Promise<bigint> =>{
+//   const descriptionHash = keccak256(toBytes(proposalValues.description));
+//   const targets =  [governorAddress];
+//   const values = [0n];
+//   const hashProposal = await readContract(config, {
+//     abi: governorAbi,
+//     address: governorAddress,
+//     functionName: 'hashProposal',
+//     args: [targets,values, [defautlCallData], descriptionHash]
+//   });
+
+//   return hashProposal;
+// }
+
 
 const goBack = () => router.back()
 
