@@ -21,19 +21,19 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <p class="text-sm text-muted-foreground">Token Name</p>
-            <p class="font-medium">{{ token.name }}</p>
+            <p class="font-medium">{{ name }}</p>
           </div>
           <div>
             <p class="text-sm text-muted-foreground">Symbol</p>
-            <p class="font-medium">{{ token.symbol }}</p>
+            <p class="font-medium">{{ symbol }}</p>
           </div>
           <div>
             <p class="text-sm text-muted-foreground">Total Supply</p>
-            <p class="font-medium">{{ token.totalSupply }} {{ token.symbol }}</p>
+            <p class="font-medium">{{ formatUnits(totalSupply, decimals) }} {{ symbol }}</p>
           </div>
           <div>
             <p class="text-sm text-muted-foreground">Holders</p>
-            <p class="font-medium">{{ token.holders.length }}</p>
+            <p class="font-medium">{{ holders.length }}</p>
           </div>
         </div>
       </CardContent>
@@ -46,12 +46,12 @@
       <CardContent>
         <ul class="divide-y divide-muted">
           <li
-            v-for="(holder, index) in token.holders"
+            v-for="(holder, index) in holders"
             :key="index"
             class="py-2 flex justify-between text-sm"
           >
             <span>{{ holder.address }}</span>
-            <span>{{ holder.balance }} {{ token.symbol }}</span>
+            <span>{{ holder.balance }} {{ symbol }}</span>
           </li>
         </ul>
       </CardContent>
@@ -67,16 +67,93 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { RouterLink } from 'vue-router'
+import { tokenAbi } from "@/abi/coproToken";
+import { readContract, writeContract, getPublicClient } from "@wagmi/core";
+import { config } from "@/config";
+import { ref, onMounted } from 'vue';
+import { formatUnits, type AbiEvent, type Log } from 'viem';
 
-// Simulated token data – replace with actual data from your smart contract
-const token = {
-  name: 'Copro Governance Token',
-  symbol: 'COPRO',
-  totalSupply: '1000000',
-  holders: [
-    { address: '0x123...abc', balance: '250000' },
-    { address: '0x456...def', balance: '150000' },
-    { address: '0x789...ghi', balance: '600000' }
-  ]
+const tokenAddress = import.meta.env.VITE_TOKEN_ADDRESS;
+const decimals = 18;
+const totalSupply = ref<BigInt>(0n);
+const symbol = ref<string>('');
+const name = ref<string>('');
+const holders = ref<{address:string, balance:string}[]>([]);
+
+
+async function getTotalSupply(): Promise<void> {
+  const res = await readContract(config, {
+    abi: tokenAbi,
+    address: tokenAddress,
+    functionName: "totalSupply",
+  });
+  totalSupply.value = res;
 }
+
+async function getSymbol(): Promise<void> {
+  const res = await readContract(config, {
+    abi: tokenAbi,
+    address: tokenAddress,
+    functionName: "symbol",
+  });
+  symbol.value = res;
+}
+
+async function getTokenName(): Promise<void> {
+  const res = await readContract(config, {
+    abi: tokenAbi,
+    address: tokenAddress,
+    functionName: "name",
+  });
+  name.value = res;
+}
+
+const eventAbi = {
+      name:'TokensMinted',
+      type: 'event',
+      inputs: [
+      { type: 'address', name:'to', indexed: true },
+      { type: 'uint256', name:'amount', indexed: false }
+    ]
+} as AbiEvent;
+
+type CustomMintLog = Log<bigint, number, false> & {
+  args: {
+    to: string;
+    amount: bigint;
+  };
+};
+
+async function fetchTokenMintedLogs(): Promise<any> {
+    return await getPublicClient(config).getLogs({
+    address: tokenAddress,
+    fromBlock: 8056089n,
+    toBlock: 'latest',
+    event: eventAbi
+  })
+}
+
+async function getHolderList(): Promise<void> {
+  const tokenMinted = await fetchTokenMintedLogs();
+  const groupedByAddress = tokenMinted.map((l:CustomMintLog) => l.args).reduce((acc: Record<string, bigint>, log: { to: string; amount: bigint }) => {
+  const address = log.to;
+  if (!acc[address]) {
+    acc[address] = 0n;
+  }
+  acc[address] += log.amount as bigint;
+  return acc;
+ }, {});
+
+ holders.value = Object.entries(groupedByAddress).map(([address, amount]) => ({
+      address,                          
+      balance: amount
+     } as {address:string, balance:string}));
+}
+
+onMounted(async () => {
+  getHolderList();
+  getTotalSupply();
+  getSymbol();
+  getTokenName();
+})
 </script>

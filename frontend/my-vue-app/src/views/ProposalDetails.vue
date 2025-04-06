@@ -5,7 +5,7 @@
         <Button variant="outline" class="mb-4" @click="goBack">
         ← Go Back
         </Button>
-        <Button variant='secondary' class="mb-4" @click="executeProposal()">
+        <Button variant='secondary' class="mb-4" @click="() => {}">
           Execute Proposal
         </Button>
       </div>
@@ -28,7 +28,7 @@
             <div>
             <h4 class="text-lg font-semibold mb-2">Votes</h4>
             <div class="grid grid-cols-3 gap-4">
-                <Badge variant="default" class="bg-green-100 text-green-800 border-green-300">For : {{ formatUnits(currentProposal?.votes.forVotes, decimals)  }}</Badge>
+                <Badge variant="outline" class="bg-green-100 text-green-800 border-green-300">For : {{ formatUnits(currentProposal?.votes.forVotes, decimals)  }}</Badge>
                 <Badge variant="outline">Abstention : {{ formatUnits(currentProposal?.votes.abstainVotes, decimals) }}</Badge>
                 <Badge variant="destructive">Against : {{ formatUnits(currentProposal?.votes.againstVotes, decimals) }}</Badge>
             </div>
@@ -36,10 +36,10 @@
 
             <Separator />
 
-            <div v-if="currentProposal.state === ProposalState.Active && !isVotePending && !userHasVoted" class="flex justify-end gap-4">
-            <Button variant="outline" @click="vote(VoteType.For)" :disabled="isVotePending">Yes, I vote for</Button>
-            <Button variant="outline" @click="vote(VoteType.Abstain)" :disabled="isVotePending">I abstain</Button>
-            <Button variant="outline" @click="vote(VoteType.Against)" :disabled="isVotePending">No, I vote against</Button>
+            <div v-if="currentProposal.state === ProposalState.Active && !isVotePending && !userHasVoted" class="flex justify-between">
+            <Button variant="outline" class="bg-zinc-300 text-grey-800 border-grey-300" @click="vote(VoteType.For)" :disabled="isVotePending">Yes, I vote for</Button>
+            <Button variant="outline" class="bg-zinc-300 text-grey-800 border-grey-300" @click="vote(VoteType.Abstain)" :disabled="isVotePending">I abstain</Button>
+            <Button variant="outline" class="bg-zinc-300 text-grey-800 border-grey-300" @click="vote(VoteType.Against)" :disabled="isVotePending">No, I vote against</Button>
             </div>
             <div class="flex justify-between gap-4" v-else>
               <p>Proposal is {{ getDisplayProposalStateValue(currentProposal.state) }}</p>

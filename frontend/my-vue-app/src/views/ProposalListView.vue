@@ -5,7 +5,7 @@
       <!-- <DataTable :columns="columns" :data="data" /> -->
       <Card class="flex justify-between p-3 mb-3">
         <h1 class="text-2xl font-semibold tracking-tight">Proposals</h1>
-        <AddProposalForm v-if="accountStore.isConnected" @submitProposal="submitNewProposal"/>
+        <AddProposalForm v-if="accountStore.isConnected" @submitProposal="submitNewProposalWithResume"/>
       </Card>
       <Card class="mb-3" v-if="!accountStore.isConnected">
         <CardHeader>
@@ -111,6 +111,9 @@ const { toast } = useToast()
 const proposalList = ref<Proposal[]>([])
 const user = ref<User>();
 
+const startIndex = ref<number>(0);
+const endIndex = ref<number>(20);
+
 const accountStore = useAccountStore();
 const proposalStore = useProposalStore();
 
@@ -125,8 +128,7 @@ const getProposalsFromContract = async (): Promise<Proposal[]> => {
     abi: governorAbi,
     address: governorAddress,
     functionName: 'getAllPropositions',
-    args: [0n, 10n],
-    account: accountStore.getAddressForCall()
+    args: [BigInt(startIndex.value), BigInt(endIndex.value)],
   });
   const formattedProposals = data.map(proposal => ({
     id: proposal.id.toString(),
@@ -148,32 +150,85 @@ const getMakeResumeProposalCalldata = (proposalId: bigint) => {
 }
 
 
-// const getIdProposalFromData = async (proposalValues: ProposalEvent):Promise<bigint> =>{
-//   const descriptionHash = keccak256(toBytes(proposalValues.description));
-//   const targets =  [governorAddress];
-//   const values = [0n];
-//   const hashProposal = await readContract(config, {
-//     abi: governorAbi,
-//     address: governorAddress,
-//     functionName: 'hashProposal',
-//     args: [targets,values, [defautlCallData], descriptionHash]
-//   });
+const getIdProposalFromData = async (proposalValues: ProposalEvent):Promise<bigint> =>{
+  const descriptionHash = keccak256(toBytes(proposalValues.description));
+  const targets =  [governorAddress];
+  const values = [0n];
+  const hashProposal = await readContract(config, {
+    abi: governorAbi,
+    address: governorAddress,
+    functionName: 'hashProposal',
+    args: [targets,values, [defautlCallData], descriptionHash]
+  });
 
-//   return hashProposal;
-// }
+  return hashProposal;
+}
 
+
+const submitNewProposalWithResume = async (proposalEvent: ProposalEvent): Promise<void>  => { 
+  debugger
+  let dummyId = 0n; // temporaire pour calcul
+  const dummyCalldata = '0x';
+  // Description
+  const description = "Proposal: auto-resume only";
+  const descriptionHash = keccak256(toBytes(description));
+
+    let resumeCalldata = encodeFunctionData({
+    abi: governorAbi,
+    functionName: 'makeResumeProposal',
+    args: [dummyId],
+  });
+
+  const targets = [governorAddress, governorAddress];
+  const values = [0n, 0n];
+  const calldatas = [dummyCalldata, resumeCalldata] as `0x${string}`[]; 
+
+  const proposalId = await readContract(config,{
+    address: governorAddress,
+    abi: governorAbi,
+    functionName: 'hashProposal',
+    args: [targets, values, calldatas, descriptionHash],
+  });
+
+  resumeCalldata = encodeFunctionData({
+    abi: governorAbi,
+    functionName: 'makeResumeProposal',
+    args: [proposalId],
+  });
+
+  const finalCalldatas = [dummyCalldata, resumeCalldata] as `0x${string}`[];
+
+  await writeContract(config, {
+    address: governorAddress,
+    abi: governorAbi,
+    functionName: 'makeProposition',
+    args: [proposalEvent, targets, values, finalCalldatas],
+    account: accountStore.getAddressForCall()
+  }).then(async () => {
+      toast({
+        title: 'Sucess to post new proposal',
+        variant: 'default'
+      });
+    })
+    .catch(error => {
+      console.log(error);
+      toast({
+        title: 'Error : Token amount too low',
+        description: error,
+        variant: 'destructive'
+      });
+    });
+}
 
 const submitNewProposal = async (values: ProposalEvent): Promise<void>  => { 
   if(!accountStore.isConnected) return;
   if(values.content.length == 0 && values.title.length == 0) return;
   
-  //var proposalId = getIdProposalFromData(values);
-
   // Encode l'appel de `makeResumeProposal` pour l'inclure dans `calldatas`
   const calldata = encodeFunctionData({
     abi: governorAbi,
     functionName: 'makeResumeProposal',
-    args:[]
+    args:[0n]
   })
 
   await writeContract(config, {
